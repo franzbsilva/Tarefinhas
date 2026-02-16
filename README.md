@@ -7,7 +7,6 @@ Um aplicativo web progressivo (PWA) desenvolvido pela **Franz TI Services** para
 O sistema foi desenhado com uma arquitetura **SaaS (Software as a Service)** Multi-Inquilino, garantindo que cada família tenha o seu ambiente isolado.
 
 * **👨‍🏫 Painel do Pai (Admin):**
-  * Cadastro e aprovação de novos pais (Super Admin).
   * Criação e edição de tarefas financeiras (Obrigatórias e Extras).
   * Gestão de cofres de múltiplos filhos.
   * Aplicação de penalidades rápidas (comportamentais).
