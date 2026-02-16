@@ -1,73 +1,145 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Meu Cofre Mágico 🚗</title>
+    <title>Cofre Mágico Kids 🚗</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
     <div id="app">
         <section id="login-screen" class="card">
             <h1>🌟 Cofre Mágico</h1>
-            <div class="input-group">
-                <input type="text" id="user" placeholder="Usuário (Seu login ou da criança)" autocapitalize="none">
+            <div id="login-form">
+                <input type="text" id="user" placeholder="E-mail do Pai ou Login do Filho" autocapitalize="none">
                 <input type="password" id="pass" placeholder="Senha">
                 <button onclick="handleLogin()" class="btn-login" id="btn-login-text">Entrar</button>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    Novo pai por aqui? <a href="#" onclick="toggleSignup()" style="color: var(--secondary);">Cadastre-se</a>
+                </p>
             </div>
-            <p id="login-error" class="error hidden">Usuário ou senha incorretos!</p>
+
+            <div id="signup-form" class="hidden">
+                <h3 style="color: var(--secondary);">Criar Conta de Pai/Mãe</h3>
+                <input type="email" id="new-parent-email" placeholder="Seu E-mail" autocapitalize="none">
+                <input type="text" id="new-parent-phone" placeholder="Seu Telefone / WhatsApp">
+                <input type="password" id="new-parent-pass" placeholder="Crie uma Senha (mínimo 6 letras)">
+
+                <div class="terms-check">
+                    <input type="checkbox" id="accept-terms">
+                    <label for="accept-terms">Li e concordo com os <a href="#" onclick="openTerms()" style="color: var(--primary);">Termos de Uso e Privacidade</a>.</label>
+                </div>
+
+                <button onclick="registerParent()" class="btn-action">Solicitar Acesso</button>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    Já tem conta? <a href="#" onclick="toggleSignup()" style="color: var(--danger);">Voltar ao Login</a>
+                </p>
+            </div>
+            <p id="login-error" class="error hidden">Erro</p>
         </section>
 
         <section id="admin-panel" class="hidden card">
-            <h2>👨‍🏫 Painel do Pai</h2>
-            
-            <div class="admin-section">
-                <h3>⚙️ Gerenciar Filhos</h3>
-                <select id="kid-selector" onchange="loadKidDataForAdmin()">
-                    <option value="">Carregando filhos...</option>
-                </select>
-                
-                <div id="admin-kid-details" class="hidden">
-                    <div class="balance-card">Saldo Atual: <span id="admin-total-money">R$ 0,00</span></div>
-                    
-                    <div class="admin-section" style="background: #fff; border: 2px dashed #ccc;">
-                        <h4>✏️ Alterar Acesso</h4>
-                        <p class="subtitle">Mude a senha caso ele esqueça.</p>
-                        <input type="text" id="edit-kid-login" placeholder="Novo Login" autocapitalize="none">
-                        <input type="text" id="edit-kid-pass" placeholder="Nova Senha">
-                        <button onclick="updateKidCredentials()" id="btn-update-cred" class="btn-action" style="background: var(--secondary);">Salvar Alterações</button>
-                    </div>
-                    
-                    <div class="penalty-group">
-                        <h4>⚠️ Aplicar Penalidade</h4>
-                        <button onclick="applyPenalty('Bater no irmão', 2.00)" class="btn-danger">Bater no irmão (-R$ 2,00)</button>
-                        <button onclick="applyPenalty('Gritar/Grosseria', 1.00)" class="btn-danger">Gritar/Grosseria (-R$ 1,00)</button>
-                        <button onclick="applyPenalty('Não obedecer', 0.50)" class="btn-danger">Não obedecer (-R$ 0,50)</button>
-                        <button onclick="applyPenalty('Brinquedos espalhados', 0.50)" class="btn-danger">Brinquedos espalhados (-R$ 0,50)</button>
-                    </div>
+            <div class="top-bar">
+                <h2>👨‍🏫 Painel</h2>
+                <button onclick="logout()" class="btn-logout">Sair 🚪</button>
+            </div>
 
-                    <div class="history-group">
-                        <h4>📜 Histórico de Hoje:</h4>
-                        <div id="admin-daily-log" class="log-section"></div>
+            <div class="tabs">
+                <button id="btn-tab-filhos" onclick="switchTab('filhos')" class="tab-active">👶 Meus Filhos</button>
+                <button id="btn-tab-tarefas" onclick="switchTab('tarefas')">📋 Tarefas</button>
+                <button id="btn-tab-superadmin" onclick="switchTab('superadmin')" class="hidden" style="color: purple; font-weight: bold;">👑 Admin</button>
+            </div>
+
+            <div id="tab-superadmin" class="tab-content hidden">
+                <div class="admin-section" style="background: #f3e5f5; border: 2px dashed purple;">
+                    <h3 style="color: purple;">Aprovar Novos Pais</h3>
+                    <p class="subtitle">Libere o acesso para os clientes cadastrados.</p>
+                    <ul id="pending-parents-list" style="list-style: none; padding: 0;"></ul>
+                </div>
+            </div>
+
+            <div id="tab-filhos" class="tab-content">
+                <div class="admin-section">
+                    <h3>➕ Adicionar Filho</h3>
+                    <input type="text" id="add-kid-name" placeholder="Nome da criança">
+                    <input type="text" id="add-kid-login" placeholder="Login para ela acessar" autocapitalize="none">
+                    <input type="password" id="add-kid-pass" placeholder="Senha da criança">
+                    <button onclick="addKid()" class="btn-action">Criar Cofre</button>
+                </div>
+
+                <div class="admin-section" style="background: #fff; border: 2px dashed #ccc;">
+                    <h3>⚙️ Gerenciar Cofres</h3>
+                    <select id="kid-selector" onchange="loadKidDataForAdmin()">
+                        <option value="">Selecione um filho...</option>
+                    </select>
+
+                    <div id="admin-kid-details" class="hidden">
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <div class="balance-card" style="flex: 1; margin: 0; padding: 10px;">
+                                <span style="font-size: 14px; color:#666; display:block;">Total Guardado:</span>
+                                <span id="admin-total-money" style="font-size: 20px;">R$ 0,00</span>
+                            </div>
+                            <div class="balance-card" style="flex: 1; margin: 0; padding: 10px; background: #fff3e0; border-color: #ff9800; color: #ff9800;">
+                                <span style="font-size: 14px; color:#666; display:block;">Ganhos do Mês:</span>
+                                <span id="admin-month-money" style="font-size: 20px;">R$ 0,00</span>
+                            </div>
+                        </div>
+
+                        <div class="admin-section" style="background: #fdfdfd; border: 1px solid #ddd; margin-bottom: 20px;">
+                            <h4 style="margin-top:0;">✏️ Editar Dados do Filho</h4>
+                            <input type="text" id="edit-kid-name" placeholder="Nome da Criança">
+                            <input type="text" id="edit-kid-login" placeholder="Novo Login" autocapitalize="none">
+                            <input type="text" id="edit-kid-pass" placeholder="Nova Senha">
+                            <button onclick="updateKidData()" id="btn-update-kid" class="btn-action" style="background: var(--primary); color: #333;">Salvar Alterações</button>
+                        </div>
+
+                        <div class="penalty-group">
+                            <h4>⚠️ Dar Penalidade Rápida</h4>
+                            <input type="text" id="penalty-desc" placeholder="Motivo (ex: Desobediência)">
+                            <input type="text" id="penalty-val" placeholder="R$ 0,00" oninput="maskCurrency(this)">
+                            <button onclick="applyPenaltyCustom()" class="btn-danger">Aplicar Desconto</button>
+                        </div>
+                        <div class="history-group">
+                            <h4>📜 Histórico de Hoje:</h4>
+                            <div id="admin-daily-log" class="log-section"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <button onclick="logout()" class="btn-back">Sair</button>
+
+            <div id="tab-tarefas" class="tab-content hidden">
+                <div class="admin-section" style="background: #e8f5e9;">
+                    <h3>📋 Criar Nova Tarefa</h3>
+                    <input type="text" id="new-task-desc" placeholder="Ex: Arrumar a cama">
+                    <input type="text" id="new-task-val" placeholder="R$ 0,00" oninput="maskCurrency(this)">
+                    <select id="new-task-type">
+                        <option value="false">🚀 Tarefa Extra</option>
+                        <option value="true">⚡ Obrigatória (Diária)</option>
+                    </select>
+                    <button onclick="createAdminTask()" class="btn-action" style="background: var(--secondary);">Adicionar Tarefa</button>
+                </div>
+                <div style="text-align: left;">
+                    <h4>Suas Tarefas Cadastradas:</h4>
+                    <ul id="admin-task-list" style="list-style: none; padding: 0;"></ul>
+                </div>
+            </div>
         </section>
 
         <section id="filho-panel" class="hidden card">
-            <div class="header-filho">
+            <div class="top-bar">
                 <h2 id="filho-welcome">Olá! 🏆</h2>
-                <div class="balance-card">Meu Dinheirinho: <span id="total-money">R$ 0,00</span></div>
+                <button onclick="logout()" class="btn-logout">Sair 🚪</button>
             </div>
+            <div class="balance-card">Meu Dinheirinho: <span id="total-money">R$ 0,00</span></div>
 
             <div id="penalty-section" class="task-section hidden" style="border-color: var(--danger);">
                 <h3 style="color: var(--danger);">⚠️ O que preciso melhorar:</h3>
                 <div id="penalty-list"></div>
             </div>
-
             <div id="history-section" class="task-section hidden" style="border-color: var(--secondary);">
                 <h3 style="color: var(--secondary);">✅ O que eu já fiz hoje:</h3>
                 <div id="filho-daily-log"></div>
@@ -75,35 +147,61 @@
 
             <div class="task-section">
                 <h3>1. Obrigatórias ⚡</h3>
-                <p class="subtitle">Faça essas primeiro para liberar as outras!</p>
                 <div id="obligatory-tasks"></div>
             </div>
-
             <div id="extra-section" class="task-section locked">
                 <h3>2. Extras e Ajuda 🚀</h3>
                 <div id="extra-tasks"></div>
             </div>
-
-            <button onclick="logout()" class="btn-back">Sair</button>
         </section>
+
+        <footer class="app-footer">
+            <p>&copy; 2026 Franz TI Services. Todos os direitos reservados.</p>
+            <p><a href="#" onclick="openTerms()" style="color: #888; text-decoration: underline;">Termos de Uso e Privacidade</a></p>
+            <a href="https://wa.me/5563981171079" target="_blank" class="btn-support">🎧 Falar com Suporte</a>
+        </footer>
     </div>
+
+    <button id="btn-top" onclick="scrollToTop()">⬆️</button>
 
     <div id="custom-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <div id="modal-icon" class="modal-icon">✨</div>
             <h2 id="modal-title">Sucesso!</h2>
-            <p id="modal-message">Ação realizada.</p>
-            <button onclick="closeModal()" class="btn-modal">Oba! Entendi</button>
+            <p id="modal-message">Ação realizada.</p><button onclick="closeModal()" class="btn-modal">Oba! Entendi</button>
+        </div>
+    </div>
+
+    <div id="edit-task-modal" class="modal-overlay hidden" onclick="closeEditTaskModal(event)">
+        <div class="modal-content" style="border-color: var(--secondary); padding-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--secondary);">✏️ Editar Tarefa</h3>
+                <button onclick="forceCloseEditTask()" style="background: none; border: none; font-size: 20px; color: #999; cursor: pointer; padding: 0;">✖</button>
+            </div>
+            <input type="hidden" id="edit-modal-task-id">
+            <input type="text" id="edit-modal-task-desc" placeholder="Descrição da Tarefa">
+            <input type="text" id="edit-modal-task-val" placeholder="R$ 0,00" oninput="maskCurrency(this)">
+            <select id="edit-modal-task-type">
+                <option value="false">🚀 Tarefa Extra</option>
+                <option value="true">⚡ Obrigatória (Diária)</option>
+            </select>
+            <button onclick="saveEditedTask()" class="btn-action" style="background: var(--secondary); margin-top: 15px;">Salvar Alterações</button>
+        </div>
+    </div>
+
+    <div id="terms-modal" class="modal-overlay hidden">
+        <div class="modal-content terms-content">
+            <h2 style="color: var(--primary);">Termos de Uso</h2>
+            <div class="terms-text">
+                <p><strong>1. Aceitação</strong><br>Ao usar o Cofre Mágico da Franz TI Services, o responsável concorda com a LGPD.</p>
+                <p><strong>2. Coleta de Dados (Pais)</strong><br>Coletamos IP, dispositivo e uso para métricas e melhorias.</p>
+                <p><strong>3. Finalidade e Monetização</strong><br>Dados analíticos dos Pais podem ser usados para envio de ofertas parceiras ou inteligência de mercado.</p>
+                <p><strong>4. Proteção de Menores (Art. 14 LGPD)</strong><br>Nenhum dado das crianças será vendido, repassado ou usado para publicidade.</p>
+            </div><button onclick="closeTerms()" class="btn-action" style="margin-top: 20px;">Fechar e Voltar</button>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(function() {
-                console.log('Service Worker Registrado!');
-            });
-        }
-    </script>
 </body>
+
 </html>
