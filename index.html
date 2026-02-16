@@ -19,7 +19,7 @@
     <div id="install-banner" class="hidden" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; padding: 15px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.5); z-index: 9999; display: flex; align-items: center; justify-content: space-between;">
         <div onclick="triggerInstall()" style="flex: 1; cursor: pointer; text-align: left;">
             <strong style="display: block; font-size: 16px; margin-bottom: 3px;">📲 Instalar o Aplicativo</strong>
-            <span style="font-size: 13px; opacity: 0.9;">Tenha o Cofre Mágico na tela do seu celular!</span>
+            <span style="font-size: 13px; opacity: 0.9;">Tenha o Cofre Mágico na tela do celular!</span>
         </div>
         <button onclick="closeInstallBanner()" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0; margin-left: 15px; box-shadow: none;">✖</button>
     </div>
@@ -44,7 +44,7 @@
 
                 <div class="terms-check">
                     <input type="checkbox" id="accept-terms">
-                    <label for="accept-terms">Li e concordo com os <a href="#" onclick="openTerms()" style="color: var(--primary);">Termos de Uso e Privacidade</a>.</label>
+                    <label for="accept-terms">Li e concordo com os <a href="termos.html" target="_blank" style="color: var(--primary);">Termos de Uso e Privacidade</a>.</label>
                 </div>
 
                 <button onclick="registerParent()" class="btn-action">Solicitar Acesso</button>
@@ -70,7 +70,6 @@
             <div id="tab-superadmin" class="tab-content hidden">
                 <div class="admin-section" style="background: #f3e5f5; border: 2px dashed purple;">
                     <h3 style="color: purple;">Aprovar Novos Pais</h3>
-                    <p class="subtitle">Libere o acesso para os clientes cadastrados.</p>
                     <ul id="pending-parents-list" style="list-style: none; padding: 0;"></ul>
                 </div>
             </div>
@@ -91,7 +90,7 @@
                     </select>
 
                     <div id="admin-kid-details" class="hidden">
-                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                             <div class="balance-card" style="flex: 1; margin: 0; padding: 10px;">
                                 <span style="font-size: 14px; color:#666; display:block;">Total Guardado:</span>
                                 <span id="admin-total-money" style="font-size: 20px;">R$ 0,00</span>
@@ -101,6 +100,8 @@
                                 <span id="admin-month-money" style="font-size: 20px;">R$ 0,00</span>
                             </div>
                         </div>
+
+                        <button onclick="openYearlyReport()" class="btn-action" style="background: #8e44ad; width: 100%; margin-bottom: 20px;">📊 Ver Histórico Anual e Mensal</button>
 
                         <div class="admin-section" style="background: #fdfdfd; border: 1px solid #ddd; margin-bottom: 20px;">
                             <h4 style="margin-top:0;">✏️ Editar Dados do Filho</h4>
@@ -118,7 +119,7 @@
                                 <button onclick="applyPenaltyBtn('Não obedecer de primeira (insistência)', 0.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Não obedecer de primeira (-R$ 0,50)</button>
                                 <button onclick="applyPenaltyBtn('Deixar brinquedos espalhados no fim do dia', 0.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Brinquedos espalhados no fim do dia (-R$ 0,50)</button>
                                 <button onclick="applyPenaltyBtn('Falar palavrão/nome feio', 1.00)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Falar palavrão/nome feio (-R$ 1,00)</button>
-                                <button onclick="applyPenaltyBtn('Usar telas (celular/TV) fora do horário permitido', 1.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Usar telas fora do horário permitido (-R$ 1,50)</button>
+                                <button onclick="applyPenaltyBtn('Usar telas (celular/TV) fora do horário', 1.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Usar telas fora do horário (-R$ 1,50)</button>
                             </div>
                             <p style="font-size: 13px; color: #666; margin-bottom: 5px;">Outro motivo (Personalizado):</p>
                             <input type="text" id="penalty-desc" placeholder="Motivo">
@@ -182,7 +183,7 @@
 
         <footer class="app-footer">
             <p>&copy; 2026 Franz TI Services. Todos os direitos reservados.</p>
-            <p><a href="#" onclick="openTerms()" style="color: #888; text-decoration: underline;">Termos de Uso e Privacidade</a></p>
+            <p><a href="termos.html" target="_blank" style="color: #888; text-decoration: underline;">Termos de Uso e Privacidade</a></p>
             <a href="https://wa.me/5563981171079" target="_blank" class="btn-support" id="btn-support">🎧 Falar com Suporte</a>
         </footer>
     </div>
@@ -194,6 +195,22 @@
             <div id="modal-icon" class="modal-icon">✨</div>
             <h2 id="modal-title">Sucesso!</h2>
             <p id="modal-message">Ação realizada.</p><button onclick="closeModal()" class="btn-modal">Oba! Entendi</button>
+        </div>
+    </div>
+
+    <div id="yearly-report-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="border-color: #8e44ad;">
+            <h2 style="color: #8e44ad; font-size: 22px;">📊 Ganhos do Ano</h2>
+            <p id="report-kid-name" style="font-weight: bold; color: #333; margin-bottom: 5px;"></p>
+            <p class="subtitle">Soma de tudo o que a criança fez de positivo em cada mês.</p>
+
+            <div id="yearly-report-content" style="text-align: left; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; max-height: 250px; overflow-y: auto; margin-bottom: 15px;">
+            </div>
+
+            <div style="font-size: 18px; font-weight: bold; color: #333; border-top: 2px dashed #ddd; padding-top: 10px;">
+                Total Ganho no Ano: <br><span id="yearly-total-money" style="color: var(--secondary); font-size: 24px;">R$ 0,00</span>
+            </div>
+            <button onclick="closeYearlyReport()" class="btn-action" style="background: #8e44ad; margin-top: 15px;">Fechar Relatório</button>
         </div>
     </div>
 
@@ -211,19 +228,6 @@
                 <option value="true">⚡ Obrigatória (Diária)</option>
             </select>
             <button onclick="saveEditedTask()" class="btn-action" style="background: var(--secondary); margin-top: 15px;">Salvar Alterações</button>
-        </div>
-    </div>
-
-    <div id="terms-modal" class="modal-overlay hidden">
-        <div class="modal-content terms-content">
-            <h2 style="color: var(--primary);">Termos de Uso</h2>
-            <div class="terms-text">
-                <p><strong>1. Aceitação</strong><br>Ao usar o Cofre Mágico da Franz TI Services, o responsável concorda com a LGPD.</p>
-                <p><strong>2. Coleta de Dados (Pais)</strong><br>Coletamos IP, dispositivo e uso para métricas e melhorias.</p>
-                <p><strong>3. Finalidade e Monetização</strong><br>Dados analíticos dos Pais podem ser usados para envio de ofertas parceiras ou inteligência de mercado.</p>
-                <p><strong>4. Proteção de Menores (Art. 14 LGPD)</strong><br>Nenhum dado das crianças será vendido, repassado ou usado para publicidade.</p>
-            </div>
-            <button onclick="acceptAndCloseTerms()" class="btn-action" style="margin-top: 20px; background: var(--secondary);">Li e Aceito (Entrar no App)</button>
         </div>
     </div>
 

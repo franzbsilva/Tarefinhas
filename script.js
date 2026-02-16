@@ -1,12 +1,6 @@
-// CONEXÃO COM O SUPABASE
-const SUPABASE_URL = 'https://tpekttzyidlsjhvrgohl.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_o7GkoqfM-QdNKBa_Pc9MqA_FTYKjmvr';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);// CONEXÃO COM O SUPABASE
-
 let currentKid = null;
 let currentParentId = null;
 
-// TAREFAS OFICIAIS (O Método Padrão do App)
 const defaultTasks = [
     { description: "Higiene Matinal (Escovar dentes/Lavar rosto)", value: 0.20, is_obligatory: true },
     { description: "Trocar de roupa sozinho (Pijama para roupa do dia)", value: 0.20, is_obligatory: true },
@@ -35,7 +29,7 @@ const defaultTasks = [
 ];
 
 // ==========================================
-// 🚀 INSTALAÇÃO DO APP (MENSAGEM FLUTUANTE)
+// 🚀 INSTALAÇÃO DO APP (PWA)
 // ==========================================
 let deferredPrompt;
 const installBanner = document.getElementById('install-banner');
@@ -62,30 +56,10 @@ async function triggerInstall() {
         deferredPrompt = null;
     }
 }
-
 function closeInstallBanner() { installBanner.classList.add('hidden'); }
 
 // ==========================================
-// 📜 TERMOS DE USO
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-    const termosAceitos = localStorage.getItem("termos_magicos_aceitos");
-    if (!termosAceitos) {
-        document.getElementById('terms-modal').classList.remove('hidden');
-    }
-});
-
-function openTerms() { document.getElementById('terms-modal').classList.remove('hidden'); }
-
-function acceptAndCloseTerms() {
-    localStorage.setItem("termos_magicos_aceitos", "sim");
-    const checkbox = document.getElementById('accept-terms');
-    if (checkbox) checkbox.checked = true;
-    document.getElementById('terms-modal').classList.add('hidden');
-}
-
-// ==========================================
-// MÁSCARAS E UI
+// MÁSCARAS E MODAIS
 // ==========================================
 function maskCurrency(input) {
     let value = input.value.replace(/\D/g, '');
@@ -164,11 +138,6 @@ async function registerParent() {
 }
 
 async function handleLogin() {
-    if (!localStorage.getItem("termos_magicos_aceitos")) {
-        document.getElementById('terms-modal').classList.remove('hidden');
-        return;
-    }
-
     const user = document.getElementById('user').value.toLowerCase().trim();
     const pass = document.getElementById('pass').value;
     const btn = document.getElementById('btn-login-text');
@@ -203,7 +172,7 @@ async function handleLogin() {
         }
 
         showPanel('admin-panel');
-        document.getElementById('btn-support').classList.remove('hidden'); // Garante que o Pai vê o botão
+        document.getElementById('btn-support').classList.remove('hidden');
         await loadTasksForAdmin();
         await populateKidSelector();
         btn.innerText = "Entrar"; return;
@@ -215,10 +184,7 @@ async function handleLogin() {
     if (kidData) {
         currentKid = kidData;
         document.getElementById('filho-welcome').innerText = `Olá, ${kidData.name}! 🏆`;
-
-        // ESCONDE O BOTÃO DO SUPORTE PARA A CRIANÇA
-        document.getElementById('btn-support').classList.add('hidden');
-
+        document.getElementById('btn-support').classList.add('hidden'); // Esconde suporte para a criança
         showPanel('filho-panel');
         await loadFilhoData();
     } else {
@@ -300,7 +266,7 @@ async function deleteTask(id) {
 }
 
 // ==========================================
-// ABA: FILHOS & PENALIDADES
+// ABA: FILHOS & RELATÓRIOS
 // ==========================================
 async function populateKidSelector() {
     const { data } = await db.from('kids').select('*').eq('parent_id', currentParentId);
@@ -324,6 +290,7 @@ async function loadKidDataForAdmin() {
     document.getElementById('edit-kid-login').value = kid.login;
     document.getElementById('edit-kid-pass').value = kid.pass;
 
+    // Ganhos do Mês Atual
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const { data: monthLogs } = await db.from('daily_log').select('*').eq('kid_id', kidId).gte('created_at', firstDay);
@@ -331,6 +298,7 @@ async function loadKidDataForAdmin() {
     if (monthLogs) monthLogs.forEach(l => { if (!l.is_penalty) earned += l.value; });
     document.getElementById('admin-month-money').innerText = `R$ ${earned.toFixed(2).replace('.', ',')}`;
 
+    // Histórico de Hoje
     const today = now.toISOString().split('T')[0];
     const { data: dailyLogs } = await db.from('daily_log').select('*').eq('kid_id', kidId).gte('created_at', `${today}T00:00:00Z`).order('created_at', { ascending: false });
     const logDiv = document.getElementById('admin-daily-log');
@@ -343,6 +311,60 @@ async function loadKidDataForAdmin() {
             else logDiv.innerHTML += `<div class="log-item">✅ ${time} - ${l.description} (+R$ ${l.value.toFixed(2).replace('.', ',')})</div>`;
         });
     }
+}
+
+// NOVO: ABRIR RELATÓRIO ANUAL E MENSAL
+async function openYearlyReport() {
+    if (!currentKid) return;
+    document.getElementById('report-kid-name').innerText = currentKid.name;
+    document.getElementById('yearly-report-modal').classList.remove('hidden');
+    document.getElementById('yearly-report-content').innerHTML = '<p>Carregando dados mágicos...</p>';
+
+    const currentYear = new Date().getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1).toISOString();
+    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59).toISOString();
+
+    const { data: logs } = await db.from('daily_log')
+        .select('*')
+        .eq('kid_id', currentKid.id)
+        .gte('created_at', startOfYear)
+        .lte('created_at', endOfYear);
+
+    let monthlyTotals = Array(12).fill(0);
+    let yearlyTotal = 0;
+
+    if (logs) {
+        logs.forEach(log => {
+            // Soma apenas o que ele GANHOU de positivo
+            if (!log.is_penalty) {
+                const month = new Date(log.created_at).getMonth();
+                monthlyTotals[month] += log.value;
+                yearlyTotal += log.value;
+            }
+        });
+    }
+
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    let html = '<ul style="list-style: none; padding: 0;">';
+
+    for (let i = 0; i < 12; i++) {
+        // Mostra o mês se ele tiver ganhos OU se for o mês atual
+        if (monthlyTotals[i] > 0 || i === new Date().getMonth()) {
+            html += `
+            <li style="display:flex; justify-content:space-between; padding: 10px; border-bottom: 1px solid #ddd; font-size: 15px;">
+                <span>${monthNames[i]}</span>
+                <strong style="color: var(--secondary);">R$ ${monthlyTotals[i].toFixed(2).replace('.', ',')}</strong>
+            </li>`;
+        }
+    }
+    html += '</ul>';
+
+    document.getElementById('yearly-report-content').innerHTML = html;
+    document.getElementById('yearly-total-money').innerText = `R$ ${yearlyTotal.toFixed(2).replace('.', ',')}`;
+}
+
+function closeYearlyReport() {
+    document.getElementById('yearly-report-modal').classList.add('hidden');
 }
 
 async function updateKidData() {
