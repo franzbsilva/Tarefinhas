@@ -1,3 +1,8 @@
+// CONEXÃO COM O SUPABASE
+const SUPABASE_URL = 'https://tpekttzyidlsjhvrgohl.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_o7GkoqfM-QdNKBa_Pc9MqA_FTYKjmvr';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);// CONEXÃO COM O SUPABASE
+
 let currentKid = null;
 let currentParentId = null;
 
