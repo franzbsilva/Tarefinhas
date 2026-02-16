@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Meu Cofre Mágico 🚗</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="app">
+        <section id="login-screen" class="card">
+            <h1>🌟 Cofre Mágico</h1>
+            <div class="input-group">
+                <input type="text" id="user" placeholder="Usuário (Seu login ou da criança)" autocapitalize="none">
+                <input type="password" id="pass" placeholder="Senha">
+                <button onclick="handleLogin()" class="btn-login" id="btn-login-text">Entrar</button>
+            </div>
+            <p id="login-error" class="error hidden">Usuário ou senha incorretos!</p>
+        </section>
+
+        <section id="admin-panel" class="hidden card">
+            <h2>👨‍🏫 Painel do Pai</h2>
+            
+            <div class="admin-section">
+                <h3>⚙️ Gerenciar Filhos</h3>
+                <select id="kid-selector" onchange="loadKidDataForAdmin()">
+                    <option value="">Carregando filhos...</option>
+                </select>
+                
+                <div id="admin-kid-details" class="hidden">
+                    <div class="balance-card">Saldo Atual: <span id="admin-total-money">R$ 0,00</span></div>
+                    
+                    <div class="admin-section" style="background: #fff; border: 2px dashed #ccc;">
+                        <h4>✏️ Alterar Acesso</h4>
+                        <p class="subtitle">Mude a senha caso ele esqueça.</p>
+                        <input type="text" id="edit-kid-login" placeholder="Novo Login" autocapitalize="none">
+                        <input type="text" id="edit-kid-pass" placeholder="Nova Senha">
+                        <button onclick="updateKidCredentials()" id="btn-update-cred" class="btn-action" style="background: var(--secondary);">Salvar Alterações</button>
+                    </div>
+                    
+                    <div class="penalty-group">
+                        <h4>⚠️ Aplicar Penalidade</h4>
+                        <button onclick="applyPenalty('Bater no irmão', 2.00)" class="btn-danger">Bater no irmão (-R$ 2,00)</button>
+                        <button onclick="applyPenalty('Gritar/Grosseria', 1.00)" class="btn-danger">Gritar/Grosseria (-R$ 1,00)</button>
+                        <button onclick="applyPenalty('Não obedecer', 0.50)" class="btn-danger">Não obedecer (-R$ 0,50)</button>
+                        <button onclick="applyPenalty('Brinquedos espalhados', 0.50)" class="btn-danger">Brinquedos espalhados (-R$ 0,50)</button>
+                    </div>
+
+                    <div class="history-group">
+                        <h4>📜 Histórico de Hoje:</h4>
+                        <div id="admin-daily-log" class="log-section"></div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="logout()" class="btn-back">Sair</button>
+        </section>
+
+        <section id="filho-panel" class="hidden card">
+            <div class="header-filho">
+                <h2 id="filho-welcome">Olá! 🏆</h2>
+                <div class="balance-card">Meu Dinheirinho: <span id="total-money">R$ 0,00</span></div>
+            </div>
+
+            <div id="penalty-section" class="task-section hidden" style="border-color: var(--danger);">
+                <h3 style="color: var(--danger);">⚠️ O que preciso melhorar:</h3>
+                <div id="penalty-list"></div>
+            </div>
+
+            <div id="history-section" class="task-section hidden" style="border-color: var(--secondary);">
+                <h3 style="color: var(--secondary);">✅ O que eu já fiz hoje:</h3>
+                <div id="filho-daily-log"></div>
+            </div>
+
+            <div class="task-section">
+                <h3>1. Obrigatórias ⚡</h3>
+                <p class="subtitle">Faça essas primeiro para liberar as outras!</p>
+                <div id="obligatory-tasks"></div>
+            </div>
+
+            <div id="extra-section" class="task-section locked">
+                <h3>2. Extras e Ajuda 🚀</h3>
+                <div id="extra-tasks"></div>
+            </div>
+
+            <button onclick="logout()" class="btn-back">Sair</button>
+        </section>
+    </div>
+
+    <div id="custom-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div id="modal-icon" class="modal-icon">✨</div>
+            <h2 id="modal-title">Sucesso!</h2>
+            <p id="modal-message">Ação realizada.</p>
+            <button onclick="closeModal()" class="btn-modal">Oba! Entendi</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(function() {
+                console.log('Service Worker Registrado!');
+            });
+        }
+    </script>
+</body>
+</html>
