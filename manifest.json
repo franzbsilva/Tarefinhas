@@ -1,14 +1,20 @@
 {
-    "name": "Meu Cofre Mágico",
-    "short_name": "Cofre",
-    "description": "Banco digital para mesada e tarefas",
-    "start_url": "./index.html",
+    "name": "Cofre Mágico Kids",
+    "short_name": "Cofre Mágico",
+    "description": "Gerenciador de tarefas e finanças para crianças",
+    "start_url": "/index.html",
     "display": "standalone",
     "background_color": "#F0F8FF",
     "theme_color": "#FFD700",
     "icons": [
         {
-            "src": "https://cdn-icons-png.flaticon.com/512/2916/2916315.png",
+            "src": "tarefinhas.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "tarefinhas.png",
             "sizes": "512x512",
             "type": "image/png"
         }

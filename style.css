@@ -3,7 +3,6 @@
    ========================================== */
 * {
     box-sizing: border-box;
-    /* Impede que os elementos vazem da tela */
     margin: 0;
     padding: 0;
 }
@@ -18,14 +17,13 @@
 body {
     font-family: 'Comic Sans MS', sans-serif;
     background-color: var(--bg);
-    /* Desenho de fundo sutil */
     background-image: url("data:image/svg+xml,%3Csvg width='150' height='150' viewBox='0 0 150 150' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='30' font-size='20' opacity='0.2'%3E🧸%3C/text%3E%3Ctext x='80' y='70' font-size='25' opacity='0.2'%3E🚗%3C/text%3E%3Ctext x='30' y='110' font-size='20' opacity='0.2'%3E⚽%3C/text%3E%3Ctext x='110' y='130' font-size='22' opacity='0.2'%3E🎨%3C/text%3E%3Ctext x='120' y='40' font-size='20' opacity='0.2'%3E🚂%3C/text%3E%3C/svg%3E");
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    /* Permite rolar a tela tranquilamente no celular */
     min-height: 100vh;
-    padding: 15px;
+    padding: 10px;
+    /* Reduzido o padding geral para dar mais espaço à tela */
 }
 
 /* ==========================================
@@ -33,13 +31,14 @@ body {
    ========================================== */
 .card {
     background: rgba(255, 255, 255, 0.98);
-    padding: 25px 20px;
-    border-radius: 25px;
+    padding: 20px 15px;
+    /* Reduzido padding interno */
+    border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 500px;
     text-align: center;
-    border: 5px solid var(--primary);
+    border: 4px solid var(--primary);
     margin-top: 10px;
     margin-bottom: 20px;
 }
@@ -68,26 +67,26 @@ h4 {
 input,
 select {
     width: 100%;
-    padding: 14px 12px;
-    margin: 8px 0;
-    border-radius: 15px;
+    padding: 12px 10px;
+    margin: 6px 0;
+    border-radius: 12px;
     border: 2px solid #ddd;
     outline: none;
     font-family: inherit;
-    font-size: 16px;
+    font-size: 15px;
     background-color: #fff;
 }
 
 button {
     width: 100%;
-    padding: 14px 12px;
-    border-radius: 15px;
+    padding: 12px 10px;
+    border-radius: 12px;
     border: none;
     cursor: pointer;
     font-weight: bold;
     transition: 0.2s;
     font-family: inherit;
-    font-size: 16px;
+    font-size: 15px;
 }
 
 button:active {
@@ -126,9 +125,9 @@ button:active {
 .admin-section,
 .task-section {
     background: #f4f4f4;
-    padding: 15px;
-    border-radius: 20px;
-    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 15px;
+    margin-bottom: 15px;
     width: 100%;
 }
 
@@ -138,48 +137,54 @@ button:active {
 }
 
 .balance-card {
-    font-size: 22px;
+    font-size: 20px;
     color: var(--secondary);
     background: #e8f5e9;
-    padding: 15px;
-    border-radius: 15px;
-    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 15px;
     border: 2px dashed var(--secondary);
     font-weight: bold;
 }
 
+/* O Segredo para a tela do J7 Prime: Flex-wrap */
 .task-item {
     background: #fff9c4;
-    margin: 10px 0;
-    padding: 15px;
-    border-radius: 15px;
+    margin: 8px 0;
+    padding: 12px;
+    border-radius: 12px;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    /* Permite que o conteúdo quebre de linha se não couber */
+    justify-content: space-between;
+    align-items: center;
     border-bottom: 3px solid #fbc02d;
     text-align: left;
+    gap: 8px;
+    /* Espaço entre o texto e o botão quando empilhados */
 }
 
 .task-desc {
-    margin-bottom: 10px;
-    font-size: 15px;
+    flex: 1;
+    /* O texto ocupa todo o espaço possível */
+    min-width: 60%;
+    /* Garante que o texto não fique muito espremido antes de quebrar */
+    font-size: 14px;
     font-weight: bold;
     color: #333;
-    width: 100%;
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
 .task-action {
-    width: 100%;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    gap: 10px;
 }
 
 .task-action button {
-    flex: 1;
-    padding: 10px;
+    padding: 8px 15px;
+    font-size: 14px;
+    width: auto;
 }
 
 .log-section {
@@ -190,14 +195,14 @@ button:active {
     max-height: 200px;
     overflow-y: auto;
     text-align: left;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .log-item {
     background: #f1f8e9;
     border-left: 4px solid var(--secondary);
     margin: 5px 0;
-    padding: 10px;
+    padding: 8px;
     border-radius: 5px;
     word-wrap: break-word;
 }
@@ -212,9 +217,9 @@ button:active {
     background: #ffebee;
     color: var(--danger);
     margin: 5px 0;
-    padding: 10px;
-    border-radius: 10px;
-    font-size: 15px;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: bold;
     text-align: left;
     word-wrap: break-word;
@@ -245,24 +250,24 @@ button:active {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     border-bottom: 2px dashed #eee;
     padding-bottom: 10px;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 .top-bar h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .btn-logout {
     background: #ff4757;
     color: white;
-    padding: 8px 15px;
-    border-radius: 10px;
-    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
     margin: 0;
     width: auto;
 }
@@ -271,11 +276,11 @@ button:active {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 5px;
-    margin-bottom: 20px;
+    gap: 4px;
+    margin-bottom: 15px;
     background: #eee;
-    border-radius: 15px;
-    padding: 5px;
+    border-radius: 12px;
+    padding: 4px;
 }
 
 .tabs button {
@@ -285,9 +290,9 @@ button:active {
     color: #666;
     margin: 0;
     box-shadow: none;
-    font-size: 13px;
-    padding: 10px 5px;
-    border-radius: 10px;
+    font-size: 12px;
+    padding: 8px 4px;
+    border-radius: 8px;
 }
 
 .tabs button.tab-active {
@@ -326,17 +331,17 @@ button:active {
     align-items: center;
     z-index: 1000;
     backdrop-filter: blur(3px);
-    padding: 15px;
+    padding: 10px;
 }
 
 .modal-content {
     background: white;
-    padding: 25px 20px;
-    border-radius: 20px;
+    padding: 20px 15px;
+    border-radius: 15px;
     text-align: center;
     width: 100%;
-    max-width: 360px;
-    border: 4px solid var(--primary);
+    max-width: 340px;
+    border: 3px solid var(--primary);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
     animation: bounceIn 0.3s;
     max-height: 90vh;
@@ -344,29 +349,29 @@ button:active {
 }
 
 .modal-icon {
-    font-size: 45px;
+    font-size: 40px;
     margin-bottom: 10px;
 }
 
 .modal-content h2 {
     color: #333;
     margin: 0 0 10px 0;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .modal-content p {
     color: #666;
-    font-size: 15px;
-    margin-bottom: 20px;
+    font-size: 14px;
+    margin-bottom: 15px;
     line-height: 1.4;
 }
 
 .btn-modal {
     background: var(--secondary);
     color: white;
-    padding: 12px;
-    font-size: 16px;
-    border-radius: 15px;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 12px;
 }
 
 @keyframes bounceIn {
@@ -384,64 +389,64 @@ button:active {
 .terms-check {
     display: flex;
     align-items: flex-start;
-    margin: 15px 0;
-    font-size: 13px;
+    margin: 10px 0;
+    font-size: 12px;
     text-align: left;
 }
 
 .terms-check input {
     width: auto;
-    margin-right: 10px;
+    margin-right: 8px;
     margin-top: 2px;
-    transform: scale(1.3);
+    transform: scale(1.2);
 }
 
 .terms-content {
     max-width: 600px;
-    padding: 20px;
+    padding: 15px;
 }
 
 .terms-text {
     text-align: left;
-    font-size: 13px;
+    font-size: 12px;
     color: #555;
     line-height: 1.5;
     border: 1px solid #eee;
-    padding: 15px;
-    border-radius: 10px;
+    padding: 10px;
+    border-radius: 8px;
     background: #f9f9f9;
     max-height: 50vh;
     overflow-y: auto;
 }
 
 .terms-text p {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 /* ==========================================
    RODAPÉ E BOTÃO FLUTUANTE
    ========================================== */
 .app-footer {
-    margin-top: 30px;
+    margin-top: 20px;
     text-align: center;
     color: #888;
-    font-size: 12px;
-    padding-bottom: 20px;
+    font-size: 11px;
+    padding-bottom: 15px;
     width: 100%;
 }
 
 .app-footer p {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .btn-support {
     background: #25D366;
     color: white;
     text-decoration: none;
-    padding: 12px 20px;
-    border-radius: 15px;
+    padding: 10px 15px;
+    border-radius: 12px;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 13px;
     display: inline-block;
     box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
 }
@@ -449,16 +454,17 @@ button:active {
 #btn-top {
     display: none;
     position: fixed;
-    bottom: 20px;
-    left: 15px;
+    bottom: 15px;
+    right: 15px;
+    left: auto;
     z-index: 99;
-    font-size: 20px;
+    font-size: 18px;
     background-color: var(--primary);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     cursor: pointer;
     align-items: center;
@@ -466,42 +472,44 @@ button:active {
 }
 
 /* ==========================================
-   INTELIGÊNCIA PARA TELAS PEQUENAS (SMARTPHONES)
+   AJUSTES FINAIS PARA TELAS MUITO PEQUENAS (J7 PRIME)
    ========================================== */
-@media (max-width: 480px) {
-    .card {
-        padding: 20px 15px;
-        border-width: 3px;
-    }
+@media (max-width: 380px) {
 
-    /* Empilha as caixas de saldo se a tela for estreita */
-    #admin-kid-details>div:first-child {
+    /* Força os botões de ação e os textos a ocuparem a linha toda */
+    .task-item {
         flex-direction: column;
-        gap: 10px !important;
+        align-items: flex-start;
     }
 
-    /* Ajusta botões de Editar/Remover tarefas para não ficarem espremidos */
-    #admin-task-list li>div:last-child {
-        flex-direction: column;
-    }
-
-    #admin-task-list li>div:last-child button {
+    .task-desc {
         width: 100%;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
     }
 
-    /* Ajusta o texto da tarefa da criança */
     .task-action {
-        flex-direction: column;
-        align-items: stretch;
+        width: 100%;
+        justify-content: flex-end;
     }
 
     .task-action button {
         width: 100%;
     }
 
-    /* Abas ficam em 2 linhas se necessário */
-    .tabs button {
-        min-width: 45%;
+    /* Ajustes no Painel do Pai para não espremer botões */
+    #admin-task-list li>div {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    #admin-task-list li>div:last-child {
+        width: 100%;
+        flex-direction: row;
+    }
+
+    /* Ganhos do mês empilhados */
+    #admin-kid-details>div:first-child {
+        flex-direction: column;
     }
 }

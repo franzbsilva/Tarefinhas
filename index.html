@@ -5,12 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cofre Mágico Kids 🚗</title>
+
     <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFD700">
+    <link rel="apple-touch-icon" href="tarefinhas.png">
+    <link rel="icon" type="image/png" href="tarefinhas.png">
+
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
+    <div id="install-banner" class="hidden" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; padding: 15px 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(108, 92, 231, 0.5); z-index: 9999; display: flex; align-items: center; justify-content: space-between;">
+        <div onclick="triggerInstall()" style="flex: 1; cursor: pointer; text-align: left;">
+            <strong style="display: block; font-size: 16px; margin-bottom: 3px;">📲 Instalar o Aplicativo</strong>
+            <span style="font-size: 13px; opacity: 0.9;">Tenha o Cofre Mágico na tela do seu celular!</span>
+        </div>
+        <button onclick="closeInstallBanner()" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0; margin-left: 15px; box-shadow: none;">✖</button>
+    </div>
+
     <div id="app">
         <section id="login-screen" class="card">
             <h1>🌟 Cofre Mágico</h1>
@@ -99,11 +112,21 @@
 
                         <div class="penalty-group">
                             <h4>⚠️ Dar Penalidade Rápida</h4>
-                            <input type="text" id="penalty-desc" placeholder="Motivo (ex: Desobediência)">
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                                <button onclick="applyPenaltyBtn('Bater no irmão', 2.00)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Bater no irmão (-R$ 2,00)</button>
+                                <button onclick="applyPenaltyBtn('Gritar/Grosseria', 1.00)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Gritar/Grosseria (-R$ 1,00)</button>
+                                <button onclick="applyPenaltyBtn('Não obedecer (insistência)', 0.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Não obedecer (-R$ 0,50)</button>
+                                <button onclick="applyPenaltyBtn('Brinquedos espalhados', 0.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Brinquedos espalhados (-R$ 0,50)</button>
+                                <button onclick="applyPenaltyBtn('Falar palavrão', 1.00)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Falar palavrão (-R$ 1,00)</button>
+                                <button onclick="applyPenaltyBtn('Telas fora do horário', 1.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Telas fora do horário (-R$ 1,50)</button>
+                            </div>
+                            <p style="font-size: 13px; color: #666; margin-bottom: 5px;">Outro motivo (Personalizado):</p>
+                            <input type="text" id="penalty-desc" placeholder="Motivo">
                             <input type="text" id="penalty-val" placeholder="R$ 0,00" oninput="maskCurrency(this)">
-                            <button onclick="applyPenaltyCustom()" class="btn-danger">Aplicar Desconto</button>
+                            <button onclick="applyPenaltyCustom()" class="btn-danger">Aplicar Desconto Personalizado</button>
                         </div>
-                        <div class="history-group">
+
+                        <div class="history-group" style="margin-top: 20px;">
                             <h4>📜 Histórico de Hoje:</h4>
                             <div id="admin-daily-log" class="log-section"></div>
                         </div>
@@ -113,14 +136,16 @@
 
             <div id="tab-tarefas" class="tab-content hidden">
                 <div class="admin-section" style="background: #e8f5e9;">
-                    <h3>📋 Criar Nova Tarefa</h3>
+                    <h3 id="task-form-title">📋 Criar/Editar Tarefa</h3>
+                    <input type="hidden" id="edit-task-id">
                     <input type="text" id="new-task-desc" placeholder="Ex: Arrumar a cama">
                     <input type="text" id="new-task-val" placeholder="R$ 0,00" oninput="maskCurrency(this)">
                     <select id="new-task-type">
                         <option value="false">🚀 Tarefa Extra</option>
                         <option value="true">⚡ Obrigatória (Diária)</option>
                     </select>
-                    <button onclick="createAdminTask()" class="btn-action" style="background: var(--secondary);">Adicionar Tarefa</button>
+                    <button onclick="saveAdminTask()" id="btn-save-task" class="btn-action" style="background: var(--secondary);">Salvar Tarefa</button>
+                    <button onclick="cancelEditTask()" id="btn-cancel-task" class="btn-danger hidden">Cancelar Edição</button>
                 </div>
                 <div style="text-align: left;">
                     <h4>Suas Tarefas Cadastradas:</h4>
@@ -197,11 +222,21 @@
                 <p><strong>2. Coleta de Dados (Pais)</strong><br>Coletamos IP, dispositivo e uso para métricas e melhorias.</p>
                 <p><strong>3. Finalidade e Monetização</strong><br>Dados analíticos dos Pais podem ser usados para envio de ofertas parceiras ou inteligência de mercado.</p>
                 <p><strong>4. Proteção de Menores (Art. 14 LGPD)</strong><br>Nenhum dado das crianças será vendido, repassado ou usado para publicidade.</p>
-            </div><button onclick="closeTerms()" class="btn-action" style="margin-top: 20px;">Fechar e Voltar</button>
+            </div>
+            <button onclick="acceptAndCloseTerms()" class="btn-action" style="margin-top: 20px; background: var(--secondary);">Li e Aceito (Entrar no App)</button>
         </div>
     </div>
 
     <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    console.log('SW registrado!', reg);
+                }).catch(err => console.log('Erro no SW', err));
+            });
+        }
+    </script>
 </body>
 
 </html>
