@@ -1,11 +1,12 @@
 // CONEXÃO COM O SUPABASE
 const SUPABASE_URL = 'https://tpekttzyidlsjhvrgohl.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_o7GkoqfM-QdNKBa_Pc9MqA_FTYKjmvr';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);// CONEXÃO COM O SUPABASE
+
 let currentKid = null;
 let currentParentId = null;
 
-// TAREFAS PADRÕES COMPLETAS
+// TAREFAS OFICIAIS (O Método Padrão do App)
 const defaultTasks = [
     { description: "Higiene Matinal (Escovar dentes/Lavar rosto)", value: 0.20, is_obligatory: true },
     { description: "Trocar de roupa sozinho (Pijama para roupa do dia)", value: 0.20, is_obligatory: true },
@@ -24,13 +25,13 @@ const defaultTasks = [
     { description: "Colocar roupa suja no cesto", value: 0.10, is_obligatory: false },
     { description: "Ajudar a pôr ou tirar a mesa", value: 0.15, is_obligatory: false },
     { description: "Regar as plantas", value: 0.20, is_obligatory: false },
-    { description: "Alimentar o pet", value: 0.20, is_obligatory: false },
+    { description: "Alimentar o pet (se houver)", value: 0.20, is_obligatory: false },
     { description: "Levar o lixo pequeno para fora", value: 0.20, is_obligatory: false },
     { description: "Brincar com o irmão (30 min sem briga)", value: 0.50, is_obligatory: false },
     { description: "Dividir/Emprestar algo sem reclamar", value: 0.25, is_obligatory: false },
     { description: "Brincar sozinho com foco (autonomia)", value: 0.25, is_obligatory: false },
     { description: "Iniciativa (fazer algo sem ser pedido)", value: 0.50, is_obligatory: false },
-    { description: "Dizer Por favor, Obrigado e Com licença o dia todo", value: 0.30, is_obligatory: false }
+    { description: "Dizer 'Por favor', 'Obrigado' e 'Com licença' o dia todo", value: 0.30, is_obligatory: false }
 ];
 
 // ==========================================
@@ -53,7 +54,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
 });
 
-// Essa função é chamada ao clicar no texto do banner
 async function triggerInstall() {
     if (deferredPrompt) {
         deferredPrompt.prompt();
@@ -63,10 +63,7 @@ async function triggerInstall() {
     }
 }
 
-// Essa função é chamada ao clicar no X do banner
-function closeInstallBanner() {
-    installBanner.classList.add('hidden');
-}
+function closeInstallBanner() { installBanner.classList.add('hidden'); }
 
 // ==========================================
 // 📜 TERMOS DE USO
@@ -180,6 +177,7 @@ async function handleLogin() {
     if (!user || !pass) { err.innerText = "Preencha tudo!"; err.classList.remove('hidden'); return; }
     btn.innerText = "Mágica acontecendo..."; err.classList.add('hidden');
 
+    // 1. LOGIN DO PAI
     if (user.includes('@')) {
         const { data: authData, error: authErr } = await db.auth.signInWithPassword({ email: user, password: pass });
         if (authErr) { err.innerText = "E-mail ou senha incorretos!"; err.classList.remove('hidden'); btn.innerText = "Entrar"; return; }
@@ -205,16 +203,22 @@ async function handleLogin() {
         }
 
         showPanel('admin-panel');
+        document.getElementById('btn-support').classList.remove('hidden'); // Garante que o Pai vê o botão
         await loadTasksForAdmin();
         await populateKidSelector();
         btn.innerText = "Entrar"; return;
     }
 
+    // 2. LOGIN DO FILHO
     const { data: kidData } = await db.from('kids').select('*').eq('login', user).eq('pass', pass).maybeSingle();
 
     if (kidData) {
         currentKid = kidData;
         document.getElementById('filho-welcome').innerText = `Olá, ${kidData.name}! 🏆`;
+
+        // ESCONDE O BOTÃO DO SUPORTE PARA A CRIANÇA
+        document.getElementById('btn-support').classList.add('hidden');
+
         showPanel('filho-panel');
         await loadFilhoData();
     } else {
