@@ -33,7 +33,6 @@ const defaultTasks = [
     { description: "Iniciativa (fazer algo sem ser pedido)", value: 0.50, is_obligatory: false },
     { description: "Dizer 'Por favor', 'Obrigado' e 'Com licença' o dia todo", value: 0.30, is_obligatory: false }
 ];
-
 // ==========================================
 // 🚀 EVENTOS DE AUTENTICAÇÃO E RECUPERAÇÃO DE SENHA
 // ==========================================
@@ -64,16 +63,59 @@ async function sendPasswordReset() {
     }
 }
 
+// FLUXO CORRIGIDO: A mensagem não vai fechar rápido demais
 async function saveNewPassword() {
+    const btn = document.querySelector('#update-password-modal .btn-action');
     const newPass = document.getElementById('new-password-input').value;
-    if (newPass.length < 6) { showModal('Atenção', 'A senha deve ter no mínimo 6 letras.', 'error'); return; }
+    
+    if (newPass.length < 6) { 
+        showModal('Atenção', 'A senha deve ter no mínimo 6 letras.', 'error'); 
+        return; 
+    }
+
+    btn.innerText = "A atualizar...";
+    btn.disabled = true;
 
     const { error } = await db.auth.updateUser({ password: newPass });
-    if (error) { showModal('Erro', error.message, 'error'); }
-    else {
+    
+    if (error) { 
+        showModal('Erro', error.message, 'error'); 
+        btn.innerText = "Atualizar Senha";
+        btn.disabled = false;
+    } else {
+        // 1. Esconde a janela de digitar a senha
         document.getElementById('update-password-modal').classList.add('hidden');
-        showModal('Uhuul!', 'Senha atualizada com sucesso! Pode entrar.', 'success');
-        logout(); // Força o login com a nova senha
+        
+        // 2. Faz logout nos bastidores silenciosamente
+        await db.auth.signOut();
+        
+        // 3. Mostra a mensagem de sucesso (ela vai ficar parada na tela)
+        showModal('Sucesso!', 'Sua senha foi atualizada. Clique abaixo para fazer login.', 'success');
+        
+        // 4. Modifica o botão do modal de sucesso para nos levar ao login com segurança
+        const btnModal = document.querySelector('.btn-modal');
+        btnModal.innerText = "Ir para o Login";
+        
+        btnModal.onclick = () => { 
+            // Só agora limpamos a URL para evitar que a tela pisque antes
+            window.history.replaceState(null, null, window.location.pathname);
+            
+            // Fecha o modal de sucesso
+            document.getElementById('custom-modal').classList.add('hidden');
+            
+            // Restaura o botão do modal para o padrão
+            btnModal.innerText = "Oba! Entendi";
+            btnModal.onclick = closeModal;
+            
+            // Limpa os campos antigos e mostra a tela de login
+            document.getElementById('pass').value = '';
+            document.getElementById('new-password-input').value = '';
+            showPanel('login-screen');
+            
+            // Destrava o botão da senha para o futuro
+            btn.innerText = "Atualizar Senha";
+            btn.disabled = false;
+        };
     }
 }
 
