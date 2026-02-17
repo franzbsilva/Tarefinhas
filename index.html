@@ -42,7 +42,7 @@
                 <h3 style="color: var(--secondary);">Criar Conta de Pai/Mãe</h3>
                 <input type="text" id="new-parent-name" placeholder="Seu Nome Completo">
                 <input type="email" id="new-parent-email" placeholder="Seu E-mail" autocapitalize="none">
-                <input type="text" id="new-parent-phone" placeholder="Seu Telefone / WhatsApp">
+                <input type="tel" id="new-parent-phone" placeholder="Seu Telefone / WhatsApp" oninput="maskPhone(this)">
                 <input type="password" id="new-parent-pass" placeholder="Crie uma Senha (mínimo 6 letras)">
 
                 <div class="terms-check">
@@ -262,7 +262,7 @@
             <p id="edit-parent-email-display" style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: #333;"></p>
             <input type="hidden" id="edit-parent-id">
             <input type="text" id="edit-parent-name" placeholder="Nome Completo">
-            <input type="text" id="edit-parent-phone" placeholder="Novo Telefone / WhatsApp">
+            <input type="tel" id="edit-parent-phone" placeholder="Novo Telefone / WhatsApp" oninput="maskPhone(this)">
             <button onclick="saveParentEdit()" class="btn-action" style="background: purple; margin-top: 15px;">Salvar Dados</button>
             <button onclick="closeEditParentModal()" class="btn-back">Cancelar</button>
         </div>

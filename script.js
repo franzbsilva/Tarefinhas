@@ -3,10 +3,12 @@ const SUPABASE_URL = 'https://tpekttzyidlsjhvrgohl.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_o7GkoqfM-QdNKBa_Pc9MqA_FTYKjmvr';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);// CONEXÃO COM O SUPABASE
 
+
 let currentKid = null;
 let currentParentId = null;
 let reportCurrentYear = new Date().getFullYear();
 
+// TAREFAS OFICIAIS (O Método Padrão do App)
 const defaultTasks = [
     { description: "Higiene Matinal (Escovar dentes/Lavar rosto)", value: 0.20, is_obligatory: true },
     { description: "Trocar de roupa sozinho (Pijama para roupa do dia)", value: 0.20, is_obligatory: true },
@@ -33,11 +35,11 @@ const defaultTasks = [
     { description: "Iniciativa (fazer algo sem ser pedido)", value: 0.50, is_obligatory: false },
     { description: "Dizer 'Por favor', 'Obrigado' e 'Com licença' o dia todo", value: 0.30, is_obligatory: false }
 ];
+
 // ==========================================
 // 🚀 EVENTOS DE AUTENTICAÇÃO E RECUPERAÇÃO DE SENHA
 // ==========================================
 db.auth.onAuthStateChange((event, session) => {
-    // Se o usuário clicou no link de recuperação de e-mail, o app abre esse modal
     if (event === 'PASSWORD_RECOVERY') {
         document.getElementById('update-password-modal').classList.remove('hidden');
     }
@@ -50,7 +52,6 @@ async function sendPasswordReset() {
     const email = document.getElementById('reset-email-input').value.trim();
     if (!email) { showModal('Atenção', 'Digite o seu e-mail.', 'error'); return; }
 
-    // Envia o e-mail e garante que volta pro aplicativo
     const { error } = await db.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + window.location.pathname
     });
@@ -63,56 +64,43 @@ async function sendPasswordReset() {
     }
 }
 
-// FLUXO CORRIGIDO: A mensagem não vai fechar rápido demais
 async function saveNewPassword() {
     const btn = document.querySelector('#update-password-modal .btn-action');
     const newPass = document.getElementById('new-password-input').value;
-    
-    if (newPass.length < 6) { 
-        showModal('Atenção', 'A senha deve ter no mínimo 6 letras.', 'error'); 
-        return; 
+
+    if (newPass.length < 6) {
+        showModal('Atenção', 'A senha deve ter no mínimo 6 letras.', 'error');
+        return;
     }
 
     btn.innerText = "A atualizar...";
     btn.disabled = true;
 
     const { error } = await db.auth.updateUser({ password: newPass });
-    
-    if (error) { 
-        showModal('Erro', error.message, 'error'); 
+
+    if (error) {
         btn.innerText = "Atualizar Senha";
         btn.disabled = false;
+        showModal('Erro', error.message, 'error');
     } else {
-        // 1. Esconde a janela de digitar a senha
         document.getElementById('update-password-modal').classList.add('hidden');
-        
-        // 2. Faz logout nos bastidores silenciosamente
+        window.history.pushState({}, document.title, window.location.pathname);
         await db.auth.signOut();
-        
-        // 3. Mostra a mensagem de sucesso (ela vai ficar parada na tela)
-        showModal('Sucesso!', 'Sua senha foi atualizada. Clique abaixo para fazer login.', 'success');
-        
-        // 4. Modifica o botão do modal de sucesso para nos levar ao login com segurança
+
+        showModal('Sucesso!', 'Senha atualizada com sucesso!', 'success');
+
         const btnModal = document.querySelector('.btn-modal');
         btnModal.innerText = "Ir para o Login";
-        
-        btnModal.onclick = () => { 
-            // Só agora limpamos a URL para evitar que a tela pisque antes
-            window.history.replaceState(null, null, window.location.pathname);
-            
-            // Fecha o modal de sucesso
+
+        btnModal.onclick = () => {
             document.getElementById('custom-modal').classList.add('hidden');
-            
-            // Restaura o botão do modal para o padrão
-            btnModal.innerText = "Oba! Entendi";
             btnModal.onclick = closeModal;
-            
-            // Limpa os campos antigos e mostra a tela de login
+            btnModal.innerText = "Oba! Entendi";
+
+            showPanel('login-screen');
             document.getElementById('pass').value = '';
             document.getElementById('new-password-input').value = '';
-            showPanel('login-screen');
-            
-            // Destrava o botão da senha para o futuro
+
             btn.innerText = "Atualizar Senha";
             btn.disabled = false;
         };
@@ -120,7 +108,7 @@ async function saveNewPassword() {
 }
 
 // ==========================================
-// 🚀 INSTALAÇÃO DO APP (PWA) E TERMOS
+// 🚀 INSTALAÇÃO DO APP E TERMOS
 // ==========================================
 let deferredPrompt;
 const installBanner = document.getElementById('install-banner');
@@ -163,6 +151,21 @@ function acceptAndCloseTerms() {
 // ==========================================
 // UI E MÁSCARAS
 // ==========================================
+
+// NOVA FUNÇÃO: Máscara para Telefone Padrão BR (00) 0 0000-0000
+function maskPhone(input) {
+    let v = input.value.replace(/\D/g, ''); // Remove tudo o que não for número
+    if (v.length > 11) v = v.substring(0, 11); // Limita a 11 dígitos no máximo
+
+    let formatted = '';
+    if (v.length > 0) { formatted += '(' + v.substring(0, 2); }
+    if (v.length > 2) { formatted += ') ' + v.substring(2, 3); }
+    if (v.length > 3) { formatted += ' ' + v.substring(3, 7); }
+    if (v.length > 7) { formatted += '-' + v.substring(7, 11); }
+
+    input.value = formatted;
+}
+
 function maskCurrency(input) {
     let value = input.value.replace(/\D/g, '');
     if (value === "") { input.dataset.raw = 0; input.value = ""; return; }
@@ -183,14 +186,23 @@ function showModal(title, message, type = 'success') {
     const icon = document.getElementById('modal-icon');
     const titleEl = document.getElementById('modal-title');
     const btn = document.querySelector('.btn-modal');
+
     document.getElementById('modal-message').innerText = message;
     titleEl.innerText = title;
+
     if (type === 'success') { icon.innerText = '🌟'; titleEl.style.color = '#4CAF50'; btn.style.background = '#4CAF50'; }
     else if (type === 'error') { icon.innerText = '💔'; titleEl.style.color = '#FF4B2B'; btn.style.background = '#FF4B2B'; }
     else if (type === 'penalty') { icon.innerText = '⚠️'; titleEl.style.color = '#FF4B2B'; btn.style.background = '#333'; }
+
     modal.classList.remove('hidden');
 }
-function closeModal() { document.getElementById('custom-modal').classList.add('hidden'); }
+
+function closeModal() {
+    document.getElementById('custom-modal').classList.add('hidden');
+    const btnModal = document.querySelector('.btn-modal');
+    btnModal.onclick = closeModal;
+    btnModal.innerText = "Oba! Entendi";
+}
 
 function closeEditTaskModal(event) { if (event.target.id === 'edit-task-modal') forceCloseEditTask(); }
 function forceCloseEditTask() { document.getElementById('edit-task-modal').classList.add('hidden'); }
@@ -214,6 +226,8 @@ function switchTab(tabName) {
 
 function showPanel(id) {
     document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('admin-panel').classList.add('hidden');
+    document.getElementById('filho-panel').classList.add('hidden');
     document.getElementById(id).classList.remove('hidden');
 }
 
