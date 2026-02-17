@@ -1,14 +1,12 @@
 // CONEXÃO COM O SUPABASE
 const SUPABASE_URL = 'https://tpekttzyidlsjhvrgohl.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_o7GkoqfM-QdNKBa_Pc9MqA_FTYKjmvr';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);// CONEXÃO COM O SUPABASE
-
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentKid = null;
 let currentParentId = null;
 let reportCurrentYear = new Date().getFullYear();
 
-// TAREFAS OFICIAIS (O Método Padrão do App)
 const defaultTasks = [
     { description: "Higiene Matinal (Escovar dentes/Lavar rosto)", value: 0.20, is_obligatory: true },
     { description: "Trocar de roupa sozinho (Pijama para roupa do dia)", value: 0.20, is_obligatory: true },
@@ -41,7 +39,8 @@ const defaultTasks = [
 // ==========================================
 db.auth.onAuthStateChange((event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
-        document.getElementById('update-password-modal').classList.remove('hidden');
+        const modal = document.getElementById('update-password-modal');
+        if (modal) modal.classList.remove('hidden');
     }
 });
 
@@ -68,10 +67,7 @@ async function saveNewPassword() {
     const btn = document.querySelector('#update-password-modal .btn-action');
     const newPass = document.getElementById('new-password-input').value;
 
-    if (newPass.length < 6) {
-        showModal('Atenção', 'A senha deve ter no mínimo 6 letras.', 'error');
-        return;
-    }
+    if (newPass.length < 6) { showModal('Atenção', 'A senha deve ter no mínimo 6 letras.', 'error'); return; }
 
     btn.innerText = "A atualizar...";
     btn.disabled = true;
@@ -79,27 +75,28 @@ async function saveNewPassword() {
     const { error } = await db.auth.updateUser({ password: newPass });
 
     if (error) {
+        showModal('Erro', error.message, 'error');
         btn.innerText = "Atualizar Senha";
         btn.disabled = false;
-        showModal('Erro', error.message, 'error');
     } else {
         document.getElementById('update-password-modal').classList.add('hidden');
-        window.history.pushState({}, document.title, window.location.pathname);
         await db.auth.signOut();
 
-        showModal('Sucesso!', 'Senha atualizada com sucesso!', 'success');
+        showModal('Sucesso!', 'Sua senha foi atualizada. Clique abaixo para fazer login.', 'success');
 
         const btnModal = document.querySelector('.btn-modal');
         btnModal.innerText = "Ir para o Login";
 
         btnModal.onclick = () => {
+            window.history.replaceState(null, null, window.location.pathname);
             document.getElementById('custom-modal').classList.add('hidden');
-            btnModal.onclick = closeModal;
-            btnModal.innerText = "Oba! Entendi";
 
+            btnModal.innerText = "Oba! Entendi";
+            btnModal.onclick = closeModal;
+
+            if (document.getElementById('pass')) document.getElementById('pass').value = '';
+            if (document.getElementById('new-password-input')) document.getElementById('new-password-input').value = '';
             showPanel('login-screen');
-            document.getElementById('pass').value = '';
-            document.getElementById('new-password-input').value = '';
 
             btn.innerText = "Atualizar Senha";
             btn.disabled = false;
@@ -122,40 +119,44 @@ function isRunningStandalone() {
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    if (!isRunningStandalone()) { installBanner.classList.remove('hidden'); }
+    if (!isRunningStandalone() && installBanner) { installBanner.classList.remove('hidden'); }
 });
 
 async function triggerInstall() {
     if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') { installBanner.classList.add('hidden'); }
+        if (outcome === 'accepted' && installBanner) { installBanner.classList.add('hidden'); }
         deferredPrompt = null;
     }
 }
-function closeInstallBanner() { installBanner.classList.add('hidden'); }
+function closeInstallBanner() { if (installBanner) installBanner.classList.add('hidden'); }
 
 document.addEventListener("DOMContentLoaded", () => {
     const termosAceitos = localStorage.getItem("termos_magicos_aceitos");
-    if (!termosAceitos) document.getElementById('terms-modal').classList.remove('hidden');
+    const termsModal = document.getElementById('terms-modal');
+    // Proteção adicionada para não dar erro se o modal não existir no HTML
+    if (!termosAceitos && termsModal) termsModal.classList.remove('hidden');
 });
 
-function openTerms() { document.getElementById('terms-modal').classList.remove('hidden'); }
+function openTerms() {
+    const termsModal = document.getElementById('terms-modal');
+    if (termsModal) termsModal.classList.remove('hidden');
+}
 function acceptAndCloseTerms() {
     localStorage.setItem("termos_magicos_aceitos", "sim");
     const checkbox = document.getElementById('accept-terms');
     if (checkbox) checkbox.checked = true;
-    document.getElementById('terms-modal').classList.add('hidden');
+    const termsModal = document.getElementById('terms-modal');
+    if (termsModal) termsModal.classList.add('hidden');
 }
 
 // ==========================================
 // UI E MÁSCARAS
 // ==========================================
-
-// NOVA FUNÇÃO: Máscara para Telefone Padrão BR (00) 0 0000-0000
 function maskPhone(input) {
-    let v = input.value.replace(/\D/g, ''); // Remove tudo o que não for número
-    if (v.length > 11) v = v.substring(0, 11); // Limita a 11 dígitos no máximo
+    let v = input.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.substring(0, 11);
 
     let formatted = '';
     if (v.length > 0) { formatted += '(' + v.substring(0, 2); }
@@ -176,6 +177,7 @@ function maskCurrency(input) {
 
 window.onscroll = function () {
     let btn = document.getElementById("btn-top");
+    if (!btn) return;
     if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) btn.style.display = "flex";
     else btn.style.display = "none";
 };
@@ -187,6 +189,7 @@ function showModal(title, message, type = 'success') {
     const titleEl = document.getElementById('modal-title');
     const btn = document.querySelector('.btn-modal');
 
+    if (!modal) return;
     document.getElementById('modal-message').innerText = message;
     titleEl.innerText = title;
 
@@ -198,14 +201,21 @@ function showModal(title, message, type = 'success') {
 }
 
 function closeModal() {
-    document.getElementById('custom-modal').classList.add('hidden');
+    const modal = document.getElementById('custom-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
     const btnModal = document.querySelector('.btn-modal');
-    btnModal.onclick = closeModal;
-    btnModal.innerText = "Oba! Entendi";
+    if (btnModal) {
+        btnModal.onclick = closeModal;
+        btnModal.innerText = "Oba! Entendi";
+    }
 }
 
 function closeEditTaskModal(event) { if (event.target.id === 'edit-task-modal') forceCloseEditTask(); }
-function forceCloseEditTask() { document.getElementById('edit-task-modal').classList.add('hidden'); }
+function forceCloseEditTask() {
+    const modal = document.getElementById('edit-task-modal');
+    if (modal) modal.classList.add('hidden');
+}
 
 function toggleSignup() {
     document.getElementById('login-form').classList.toggle('hidden');
@@ -226,8 +236,9 @@ function switchTab(tabName) {
 
 function showPanel(id) {
     document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('admin-panel').classList.add('hidden');
-    document.getElementById('filho-panel').classList.add('hidden');
+    if (document.getElementById('admin-panel')) document.getElementById('admin-panel').classList.add('hidden');
+    if (document.getElementById('filho-panel')) document.getElementById('filho-panel').classList.add('hidden');
+
     document.getElementById(id).classList.remove('hidden');
 }
 
@@ -235,13 +246,13 @@ function showPanel(id) {
 // LOGIN & CADASTRO
 // ==========================================
 async function registerParent() {
-    const name = document.getElementById('new-parent-name').value.trim();
+    const name = document.getElementById('new-parent-name') ? document.getElementById('new-parent-name').value.trim() : 'Pai/Mãe';
     const email = document.getElementById('new-parent-email').value.trim();
     const phone = document.getElementById('new-parent-phone').value.trim();
     const pass = document.getElementById('new-parent-pass').value;
     const acceptedTerms = document.getElementById('accept-terms').checked;
 
-    if (!name || !email || !phone) { showModal('Atenção', 'Preencha o Nome, E-mail e Telefone.', 'error'); return; }
+    if (!email || !phone) { showModal('Atenção', 'Preencha o e-mail e telefone.', 'error'); return; }
     if (pass.length < 6) { showModal('Atenção', 'A senha deve ter no mínimo 6 caracteres.', 'error'); return; }
     if (!acceptedTerms) { showModal('Atenção', 'Você deve concordar com os Termos.', 'error'); return; }
 
@@ -287,7 +298,7 @@ async function handleLogin() {
         }
 
         showPanel('admin-panel');
-        document.getElementById('btn-support').classList.remove('hidden');
+        if (document.getElementById('btn-support')) document.getElementById('btn-support').classList.remove('hidden');
         await loadTasksForAdmin();
         await populateKidSelector();
         btn.innerText = "Entrar"; return;
@@ -298,7 +309,7 @@ async function handleLogin() {
     if (kidData) {
         currentKid = kidData;
         document.getElementById('filho-welcome').innerText = `Olá, ${kidData.name}! 🏆`;
-        document.getElementById('btn-support').classList.add('hidden');
+        if (document.getElementById('btn-support')) document.getElementById('btn-support').classList.add('hidden');
         showPanel('filho-panel');
         await loadFilhoData();
     } else {
@@ -314,6 +325,7 @@ async function handleLogin() {
 async function loadAllParentsForAdmin() {
     const { data } = await db.from('parents').select('*').order('email', { ascending: true });
     const list = document.getElementById('all-parents-list');
+    if (!list) return;
     list.innerHTML = '';
 
     if (!data || data.length === 0) { list.innerHTML = '<p>Nenhum cliente cadastrado.</p>'; return; }
@@ -350,19 +362,26 @@ async function toggleParentStatus(id, newStatus) {
 function openEditParentModal(id, email, name, phone) {
     document.getElementById('edit-parent-id').value = id;
     document.getElementById('edit-parent-email-display').innerText = email;
-    document.getElementById('edit-parent-name').value = name;
-    document.getElementById('edit-parent-phone').value = phone;
+    if (document.getElementById('edit-parent-name')) document.getElementById('edit-parent-name').value = name;
+    if (document.getElementById('edit-parent-phone')) document.getElementById('edit-parent-phone').value = phone;
     document.getElementById('edit-parent-modal').classList.remove('hidden');
 }
 
-function closeEditParentModal() { document.getElementById('edit-parent-modal').classList.add('hidden'); }
+function closeEditParentModal() {
+    const modal = document.getElementById('edit-parent-modal');
+    if (modal) modal.classList.add('hidden');
+}
 
 async function saveParentEdit() {
     const id = document.getElementById('edit-parent-id').value;
-    const newName = document.getElementById('edit-parent-name').value.trim();
-    const newPhone = document.getElementById('edit-parent-phone').value.trim();
+    const newName = document.getElementById('edit-parent-name') ? document.getElementById('edit-parent-name').value.trim() : null;
+    const newPhone = document.getElementById('edit-parent-phone') ? document.getElementById('edit-parent-phone').value.trim() : null;
 
-    await db.from('parents').update({ name: newName, phone: newPhone }).eq('id', id);
+    let updates = {};
+    if (newName !== null) updates.name = newName;
+    if (newPhone !== null) updates.phone = newPhone;
+
+    await db.from('parents').update(updates).eq('id', id);
     closeEditParentModal();
     showModal('Salvo', 'Os dados do cliente foram atualizados.', 'success');
     loadAllParentsForAdmin();
@@ -440,8 +459,39 @@ async function deleteTask(id) {
 }
 
 // ==========================================
-// ABA: FILHOS E DADOS
+// ABA: FILHOS E DADOS 
 // ==========================================
+
+// FUNÇÃO RESTAURADA E SALVA!
+async function addKid() {
+    const name = document.getElementById('add-kid-name').value.trim();
+    const login = document.getElementById('add-kid-login').value.toLowerCase().trim();
+    const pass = document.getElementById('add-kid-pass').value;
+
+    if (!name || !login || !pass) {
+        showModal('Atenção', 'Preencha todos os dados da criança.', 'error');
+        return;
+    }
+
+    const { error } = await db.from('kids').insert([{
+        parent_id: currentParentId,
+        name: name,
+        login: login,
+        pass: pass,
+        balance: 0
+    }]);
+
+    if (error) {
+        showModal('Erro', error.message, 'error');
+    } else {
+        document.getElementById('add-kid-name').value = '';
+        document.getElementById('add-kid-login').value = '';
+        document.getElementById('add-kid-pass').value = '';
+        showModal('Sucesso!', 'Cofre criado com sucesso!', 'success');
+        populateKidSelector();
+    }
+}
+
 async function populateKidSelector() {
     const { data } = await db.from('kids').select('*').eq('parent_id', currentParentId);
     const selector = document.getElementById('kid-selector');
@@ -521,7 +571,10 @@ async function openYearlyReport() {
     await loadYearData();
 }
 
-function closeYearlyReport() { document.getElementById('yearly-report-modal').classList.add('hidden'); }
+function closeYearlyReport() {
+    const modal = document.getElementById('yearly-report-modal');
+    if (modal) modal.classList.add('hidden');
+}
 
 async function changeReportYear(direction) {
     reportCurrentYear += direction;
