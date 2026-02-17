@@ -31,20 +31,23 @@
                 <input type="text" id="user" placeholder="E-mail do Pai ou Login do Filho" autocapitalize="none">
                 <input type="password" id="pass" placeholder="Senha">
                 <button onclick="handleLogin()" class="btn-login" id="btn-login-text">Entrar</button>
-                <p style="margin-top: 15px; font-size: 14px; color: #666;">
-                    Novo pai por aqui? <a href="#" onclick="toggleSignup()" style="color: var(--secondary);">Cadastre-se</a>
-                </p>
+
+                <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 14px;">
+                    <a href="#" onclick="openForgotPassword()" style="color: #666; text-decoration: underline;">Esqueci a senha</a>
+                    <a href="#" onclick="toggleSignup()" style="color: var(--secondary); font-weight: bold;">Criar Conta</a>
+                </div>
             </div>
 
             <div id="signup-form" class="hidden">
                 <h3 style="color: var(--secondary);">Criar Conta de Pai/Mãe</h3>
+                <input type="text" id="new-parent-name" placeholder="Seu Nome Completo">
                 <input type="email" id="new-parent-email" placeholder="Seu E-mail" autocapitalize="none">
                 <input type="text" id="new-parent-phone" placeholder="Seu Telefone / WhatsApp">
                 <input type="password" id="new-parent-pass" placeholder="Crie uma Senha (mínimo 6 letras)">
 
                 <div class="terms-check">
                     <input type="checkbox" id="accept-terms">
-                    <label for="accept-terms">Li e concordo com os <a href="termos.html" target="_blank" style="color: var(--primary);">Termos de Uso e Privacidade</a>.</label>
+                    <label for="accept-terms">Li e concordo com os <a href="termos.html" target="_blank" style="color: var(--primary);">Termos de Uso</a>.</label>
                 </div>
 
                 <button onclick="registerParent()" class="btn-action">Solicitar Acesso</button>
@@ -69,8 +72,9 @@
 
             <div id="tab-superadmin" class="tab-content hidden">
                 <div class="admin-section" style="background: #f3e5f5; border: 2px dashed purple;">
-                    <h3 style="color: purple;">Aprovar Novos Pais</h3>
-                    <ul id="pending-parents-list" style="list-style: none; padding: 0;"></ul>
+                    <h3 style="color: purple; margin-bottom: 5px;">👑 Gestão de Clientes</h3>
+                    <p class="subtitle">Aprove, bloqueie ou atualize o contato dos pais cadastrados.</p>
+                    <div id="all-parents-list" style="margin-top: 15px;"></div>
                 </div>
             </div>
 
@@ -101,7 +105,7 @@
                             </div>
                         </div>
 
-                        <button onclick="openYearlyReport()" class="btn-action" style="background: #8e44ad; width: 100%; margin-bottom: 20px;">📊 Ver Histórico Anual e Mensal</button>
+                        <button onclick="openYearlyReport()" class="btn-action" style="background: #8e44ad; width: 100%; margin-bottom: 20px;">📊 Ver Histórico Completo</button>
 
                         <div class="admin-section" style="background: #fdfdfd; border: 1px solid #ddd; margin-bottom: 20px;">
                             <h4 style="margin-top:0;">✏️ Editar Dados do Filho</h4>
@@ -116,10 +120,10 @@
                             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
                                 <button onclick="applyPenaltyBtn('Bater no irmão', 2.00)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Bater no irmão (-R$ 2,00)</button>
                                 <button onclick="applyPenaltyBtn('Gritar ou responder com grosseria', 1.00)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Gritar ou responder com grosseria (-R$ 1,00)</button>
-                                <button onclick="applyPenaltyBtn('Não obedecer de primeira (insistência)', 0.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Não obedecer de primeira (-R$ 0,50)</button>
-                                <button onclick="applyPenaltyBtn('Deixar brinquedos espalhados no fim do dia', 0.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Brinquedos espalhados no fim do dia (-R$ 0,50)</button>
+                                <button onclick="applyPenaltyBtn('Não obedecer de primeira', 0.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Não obedecer de primeira (-R$ 0,50)</button>
+                                <button onclick="applyPenaltyBtn('Brinquedos espalhados no fim do dia', 0.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Brinquedos espalhados (-R$ 0,50)</button>
                                 <button onclick="applyPenaltyBtn('Falar palavrão/nome feio', 1.00)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Falar palavrão/nome feio (-R$ 1,00)</button>
-                                <button onclick="applyPenaltyBtn('Usar telas (celular/TV) fora do horário', 1.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Usar telas fora do horário (-R$ 1,50)</button>
+                                <button onclick="applyPenaltyBtn('Usar telas fora do horário', 1.50)" class="btn-danger" style="margin:0; text-align: left; padding: 10px;">Usar telas fora do horário (-R$ 1,50)</button>
                             </div>
                             <p style="font-size: 13px; color: #666; margin-bottom: 5px;">Outro motivo (Personalizado):</p>
                             <input type="text" id="penalty-desc" placeholder="Motivo">
@@ -198,19 +202,40 @@
         </div>
     </div>
 
+    <div id="forgot-password-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 style="color: var(--danger);">Esqueci a Senha</h2>
+            <p>Digite seu e-mail de cadastro. Enviaremos um link mágico para você criar uma nova senha.</p>
+            <input type="email" id="reset-email-input" placeholder="Seu E-mail" autocapitalize="none">
+            <button onclick="sendPasswordReset()" class="btn-action" style="background: var(--danger);">Enviar Link de Recuperação</button>
+            <button onclick="closeForgotPassword()" class="btn-back">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="update-password-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="border-color: var(--secondary);">
+            <h2 style="color: var(--secondary);">🔑 Criar Nova Senha</h2>
+            <p>Bem-vindo de volta! Digite a sua nova senha abaixo.</p>
+            <input type="password" id="new-password-input" placeholder="Nova Senha (mínimo 6 letras)">
+            <button onclick="saveNewPassword()" class="btn-action" style="background: var(--secondary);">Atualizar Senha</button>
+        </div>
+    </div>
+
     <div id="yearly-report-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="border-color: #8e44ad;">
-            <h2 style="color: #8e44ad; font-size: 22px;">📊 Ganhos do Ano</h2>
-            <p id="report-kid-name" style="font-weight: bold; color: #333; margin-bottom: 5px;"></p>
-            <p class="subtitle">Soma de tudo o que a criança fez de positivo em cada mês.</p>
-
-            <div id="yearly-report-content" style="text-align: left; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; max-height: 250px; overflow-y: auto; margin-bottom: 15px;">
+        <div class="modal-content" style="border-color: #8e44ad; max-width: 450px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h2 style="color: #8e44ad; font-size: 20px; margin: 0;">📊 Histórico</h2>
+                <button onclick="closeYearlyReport()" style="background: none; border: none; font-size: 20px; color: #999; cursor: pointer; padding: 0;">✖</button>
             </div>
-
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #eee; border-radius: 10px; padding: 5px;">
+                <button onclick="changeReportYear(-1)" style="width: auto; background: none; border: none; font-size: 20px; box-shadow: none;">◀</button>
+                <strong id="report-year-display" style="font-size: 18px;">2026</strong>
+                <button onclick="changeReportYear(1)" style="width: auto; background: none; border: none; font-size: 20px; box-shadow: none;">▶</button>
+            </div>
+            <div id="yearly-report-content" style="text-align: left; max-height: 40vh; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
             <div style="font-size: 18px; font-weight: bold; color: #333; border-top: 2px dashed #ddd; padding-top: 10px;">
-                Total Ganho no Ano: <br><span id="yearly-total-money" style="color: var(--secondary); font-size: 24px;">R$ 0,00</span>
+                Ganho Total no Ano: <br><span id="yearly-total-money" style="color: var(--secondary); font-size: 24px;">R$ 0,00</span>
             </div>
-            <button onclick="closeYearlyReport()" class="btn-action" style="background: #8e44ad; margin-top: 15px;">Fechar Relatório</button>
         </div>
     </div>
 
@@ -231,15 +256,21 @@
         </div>
     </div>
 
+    <div id="edit-parent-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="border-color: purple; padding-top: 15px;">
+            <h3 style="color: purple; margin-top:0;">✏️ Atualizar Cliente</h3>
+            <p id="edit-parent-email-display" style="font-size: 14px; font-weight: bold; margin-bottom: 15px; color: #333;"></p>
+            <input type="hidden" id="edit-parent-id">
+            <input type="text" id="edit-parent-name" placeholder="Nome Completo">
+            <input type="text" id="edit-parent-phone" placeholder="Novo Telefone / WhatsApp">
+            <button onclick="saveParentEdit()" class="btn-action" style="background: purple; margin-top: 15px;">Salvar Dados</button>
+            <button onclick="closeEditParentModal()" class="btn-back">Cancelar</button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    console.log('SW registrado!', reg);
-                }).catch(err => console.log('Erro no SW', err));
-            });
-        }
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
     </script>
 </body>
 

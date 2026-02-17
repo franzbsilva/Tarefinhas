@@ -5,6 +5,7 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);// CONEXÃO 
 
 let currentKid = null;
 let currentParentId = null;
+let reportCurrentYear = new Date().getFullYear();
 
 const defaultTasks = [
     { description: "Higiene Matinal (Escovar dentes/Lavar rosto)", value: 0.20, is_obligatory: true },
@@ -34,7 +35,50 @@ const defaultTasks = [
 ];
 
 // ==========================================
-// 🚀 INSTALAÇÃO DO APP (PWA)
+// 🚀 EVENTOS DE AUTENTICAÇÃO E RECUPERAÇÃO DE SENHA
+// ==========================================
+db.auth.onAuthStateChange((event, session) => {
+    // Se o usuário clicou no link de recuperação de e-mail, o app abre esse modal
+    if (event === 'PASSWORD_RECOVERY') {
+        document.getElementById('update-password-modal').classList.remove('hidden');
+    }
+});
+
+function openForgotPassword() { document.getElementById('forgot-password-modal').classList.remove('hidden'); }
+function closeForgotPassword() { document.getElementById('forgot-password-modal').classList.add('hidden'); }
+
+async function sendPasswordReset() {
+    const email = document.getElementById('reset-email-input').value.trim();
+    if (!email) { showModal('Atenção', 'Digite o seu e-mail.', 'error'); return; }
+
+    // Envia o e-mail e garante que volta pro aplicativo
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname
+    });
+
+    if (error) {
+        showModal('Erro', error.message, 'error');
+    } else {
+        closeForgotPassword();
+        showModal('Sucesso!', 'Link enviado! Verifique a sua caixa de entrada ou SPAM.', 'success');
+    }
+}
+
+async function saveNewPassword() {
+    const newPass = document.getElementById('new-password-input').value;
+    if (newPass.length < 6) { showModal('Atenção', 'A senha deve ter no mínimo 6 letras.', 'error'); return; }
+
+    const { error } = await db.auth.updateUser({ password: newPass });
+    if (error) { showModal('Erro', error.message, 'error'); }
+    else {
+        document.getElementById('update-password-modal').classList.add('hidden');
+        showModal('Uhuul!', 'Senha atualizada com sucesso! Pode entrar.', 'success');
+        logout(); // Força o login com a nova senha
+    }
+}
+
+// ==========================================
+// 🚀 INSTALAÇÃO DO APP (PWA) E TERMOS
 // ==========================================
 let deferredPrompt;
 const installBanner = document.getElementById('install-banner');
@@ -48,9 +92,7 @@ function isRunningStandalone() {
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    if (!isRunningStandalone()) {
-        installBanner.classList.remove('hidden');
-    }
+    if (!isRunningStandalone()) { installBanner.classList.remove('hidden'); }
 });
 
 async function triggerInstall() {
@@ -63,8 +105,21 @@ async function triggerInstall() {
 }
 function closeInstallBanner() { installBanner.classList.add('hidden'); }
 
+document.addEventListener("DOMContentLoaded", () => {
+    const termosAceitos = localStorage.getItem("termos_magicos_aceitos");
+    if (!termosAceitos) document.getElementById('terms-modal').classList.remove('hidden');
+});
+
+function openTerms() { document.getElementById('terms-modal').classList.remove('hidden'); }
+function acceptAndCloseTerms() {
+    localStorage.setItem("termos_magicos_aceitos", "sim");
+    const checkbox = document.getElementById('accept-terms');
+    if (checkbox) checkbox.checked = true;
+    document.getElementById('terms-modal').classList.add('hidden');
+}
+
 // ==========================================
-// MÁSCARAS E MODAIS
+// UI E MÁSCARAS
 // ==========================================
 function maskCurrency(input) {
     let value = input.value.replace(/\D/g, '');
@@ -79,7 +134,6 @@ window.onscroll = function () {
     if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) btn.style.display = "flex";
     else btn.style.display = "none";
 };
-
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 function showModal(title, message, type = 'success') {
@@ -125,20 +179,21 @@ function showPanel(id) {
 // LOGIN & CADASTRO
 // ==========================================
 async function registerParent() {
+    const name = document.getElementById('new-parent-name').value.trim();
     const email = document.getElementById('new-parent-email').value.trim();
     const phone = document.getElementById('new-parent-phone').value.trim();
     const pass = document.getElementById('new-parent-pass').value;
     const acceptedTerms = document.getElementById('accept-terms').checked;
 
-    if (!email || !phone) { showModal('Atenção', 'Preencha o e-mail e telefone.', 'error'); return; }
-    if (pass.length < 6) { showModal('Atenção', 'A senha deve ter pelo menos 6 caracteres.', 'error'); return; }
+    if (!name || !email || !phone) { showModal('Atenção', 'Preencha o Nome, E-mail e Telefone.', 'error'); return; }
+    if (pass.length < 6) { showModal('Atenção', 'A senha deve ter no mínimo 6 caracteres.', 'error'); return; }
     if (!acceptedTerms) { showModal('Atenção', 'Você deve concordar com os Termos.', 'error'); return; }
 
     const { data, error } = await db.auth.signUp({ email: email, password: pass });
-    if (error) { showModal('Erro', error.message, 'error'); return; }
+    if (error) { showModal('Erro', 'Este e-mail já existe ou é inválido.', 'error'); return; }
 
-    await db.from('parents').insert([{ id: data.user.id, email: email, phone: phone, is_approved: false }]);
-    showModal('Sucesso!', 'Conta criada! Aguarde aprovação.', 'success');
+    await db.from('parents').insert([{ id: data.user.id, name: name, email: email, phone: phone, is_approved: false }]);
+    showModal('Sucesso!', 'Conta criada! O acesso será liberado em breve.', 'success');
     toggleSignup();
 }
 
@@ -149,9 +204,8 @@ async function handleLogin() {
     const err = document.getElementById('login-error');
 
     if (!user || !pass) { err.innerText = "Preencha tudo!"; err.classList.remove('hidden'); return; }
-    btn.innerText = "Mágica acontecendo..."; err.classList.add('hidden');
+    btn.innerText = "Carregando..."; err.classList.add('hidden');
 
-    // 1. LOGIN DO PAI
     if (user.includes('@')) {
         const { data: authData, error: authErr } = await db.auth.signInWithPassword({ email: user, password: pass });
         if (authErr) { err.innerText = "E-mail ou senha incorretos!"; err.classList.remove('hidden'); btn.innerText = "Entrar"; return; }
@@ -161,13 +215,13 @@ async function handleLogin() {
 
         if (!parentData || !parentData.is_approved) {
             await db.auth.signOut();
-            showModal('Acesso Negado', 'Sua conta ainda não foi aprovada.', 'error');
+            showModal('Acesso Negado', 'Sua conta encontra-se pendente ou bloqueada.', 'error');
             btn.innerText = "Entrar"; return;
         }
 
         if (parentData.is_super_admin) {
             document.getElementById('btn-tab-superadmin').classList.remove('hidden');
-            loadPendingParents();
+            loadAllParentsForAdmin();
         }
 
         const { data: tasksCheck } = await db.from('tasks').select('id').eq('parent_id', currentParentId);
@@ -183,13 +237,12 @@ async function handleLogin() {
         btn.innerText = "Entrar"; return;
     }
 
-    // 2. LOGIN DO FILHO
     const { data: kidData } = await db.from('kids').select('*').eq('login', user).eq('pass', pass).maybeSingle();
 
     if (kidData) {
         currentKid = kidData;
         document.getElementById('filho-welcome').innerText = `Olá, ${kidData.name}! 🏆`;
-        document.getElementById('btn-support').classList.add('hidden'); // Esconde suporte para a criança
+        document.getElementById('btn-support').classList.add('hidden');
         showPanel('filho-panel');
         await loadFilhoData();
     } else {
@@ -197,6 +250,66 @@ async function handleLogin() {
         err.classList.remove('hidden');
     }
     btn.innerText = "Entrar";
+}
+
+// ==========================================
+// SUPER ADMIN: GESTÃO COMPLETA DE PAIS
+// ==========================================
+async function loadAllParentsForAdmin() {
+    const { data } = await db.from('parents').select('*').order('email', { ascending: true });
+    const list = document.getElementById('all-parents-list');
+    list.innerHTML = '';
+
+    if (!data || data.length === 0) { list.innerHTML = '<p>Nenhum cliente cadastrado.</p>'; return; }
+
+    data.forEach(p => {
+        if (p.is_super_admin) return;
+
+        const statusBadge = p.is_approved ? '<span style="color: #4CAF50; font-weight: bold;">✅ Aprovado</span>' : '<span style="color: #FF4B2B; font-weight: bold;">❌ Suspenso/Pendente</span>';
+        const toggleBtn = p.is_approved
+            ? `<button onclick="toggleParentStatus('${p.id}', false)" style="background: var(--danger); color: white; padding: 8px; border-radius: 8px; flex: 1;">Bloquear</button>`
+            : `<button onclick="toggleParentStatus('${p.id}', true)" style="background: var(--secondary); color: white; padding: 8px; border-radius: 8px; flex: 1;">Aprovar</button>`;
+
+        const displayName = p.name ? p.name : 'Sem nome definido';
+
+        list.innerHTML += `
+            <div style="background: white; padding: 15px; border-radius: 12px; border: 1px solid #ccc; margin-bottom: 15px; text-align: left;">
+                <strong style="font-size: 16px; color: purple;">${displayName}</strong><br>
+                <span style="font-size: 14px;">${p.email}</span>
+                <div style="margin: 5px 0; font-size: 13px; color: #555;">📱 ${p.phone || 'Sem número'} <br> Status: ${statusBadge}</div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    ${toggleBtn}
+                    <button onclick="openEditParentModal('${p.id}', '${p.email}', '${p.name || ''}', '${p.phone || ''}')" style="background: #e0e0e0; color: #333; padding: 8px; border-radius: 8px; flex: 1;">Editar Dados</button>
+                </div>
+            </div>`;
+    });
+}
+
+async function toggleParentStatus(id, newStatus) {
+    await db.from('parents').update({ is_approved: newStatus }).eq('id', id);
+    showModal('Sucesso', newStatus ? 'Cliente Aprovado!' : 'Acesso Bloqueado!', 'success');
+    loadAllParentsForAdmin();
+}
+
+function openEditParentModal(id, email, name, phone) {
+    document.getElementById('edit-parent-id').value = id;
+    document.getElementById('edit-parent-email-display').innerText = email;
+    document.getElementById('edit-parent-name').value = name;
+    document.getElementById('edit-parent-phone').value = phone;
+    document.getElementById('edit-parent-modal').classList.remove('hidden');
+}
+
+function closeEditParentModal() { document.getElementById('edit-parent-modal').classList.add('hidden'); }
+
+async function saveParentEdit() {
+    const id = document.getElementById('edit-parent-id').value;
+    const newName = document.getElementById('edit-parent-name').value.trim();
+    const newPhone = document.getElementById('edit-parent-phone').value.trim();
+
+    await db.from('parents').update({ name: newName, phone: newPhone }).eq('id', id);
+    closeEditParentModal();
+    showModal('Salvo', 'Os dados do cliente foram atualizados.', 'success');
+    loadAllParentsForAdmin();
 }
 
 // ==========================================
@@ -271,7 +384,7 @@ async function deleteTask(id) {
 }
 
 // ==========================================
-// ABA: FILHOS & RELATÓRIOS
+// ABA: FILHOS E DADOS
 // ==========================================
 async function populateKidSelector() {
     const { data } = await db.from('kids').select('*').eq('parent_id', currentParentId);
@@ -295,7 +408,6 @@ async function loadKidDataForAdmin() {
     document.getElementById('edit-kid-login').value = kid.login;
     document.getElementById('edit-kid-pass').value = kid.pass;
 
-    // Ganhos do Mês Atual
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const { data: monthLogs } = await db.from('daily_log').select('*').eq('kid_id', kidId).gte('created_at', firstDay);
@@ -303,7 +415,6 @@ async function loadKidDataForAdmin() {
     if (monthLogs) monthLogs.forEach(l => { if (!l.is_penalty) earned += l.value; });
     document.getElementById('admin-month-money').innerText = `R$ ${earned.toFixed(2).replace('.', ',')}`;
 
-    // Histórico de Hoje
     const today = now.toISOString().split('T')[0];
     const { data: dailyLogs } = await db.from('daily_log').select('*').eq('kid_id', kidId).gte('created_at', `${today}T00:00:00Z`).order('created_at', { ascending: false });
     const logDiv = document.getElementById('admin-daily-log');
@@ -316,60 +427,6 @@ async function loadKidDataForAdmin() {
             else logDiv.innerHTML += `<div class="log-item">✅ ${time} - ${l.description} (+R$ ${l.value.toFixed(2).replace('.', ',')})</div>`;
         });
     }
-}
-
-// NOVO: ABRIR RELATÓRIO ANUAL E MENSAL
-async function openYearlyReport() {
-    if (!currentKid) return;
-    document.getElementById('report-kid-name').innerText = currentKid.name;
-    document.getElementById('yearly-report-modal').classList.remove('hidden');
-    document.getElementById('yearly-report-content').innerHTML = '<p>Carregando dados mágicos...</p>';
-
-    const currentYear = new Date().getFullYear();
-    const startOfYear = new Date(currentYear, 0, 1).toISOString();
-    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59).toISOString();
-
-    const { data: logs } = await db.from('daily_log')
-        .select('*')
-        .eq('kid_id', currentKid.id)
-        .gte('created_at', startOfYear)
-        .lte('created_at', endOfYear);
-
-    let monthlyTotals = Array(12).fill(0);
-    let yearlyTotal = 0;
-
-    if (logs) {
-        logs.forEach(log => {
-            // Soma apenas o que ele GANHOU de positivo
-            if (!log.is_penalty) {
-                const month = new Date(log.created_at).getMonth();
-                monthlyTotals[month] += log.value;
-                yearlyTotal += log.value;
-            }
-        });
-    }
-
-    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-    let html = '<ul style="list-style: none; padding: 0;">';
-
-    for (let i = 0; i < 12; i++) {
-        // Mostra o mês se ele tiver ganhos OU se for o mês atual
-        if (monthlyTotals[i] > 0 || i === new Date().getMonth()) {
-            html += `
-            <li style="display:flex; justify-content:space-between; padding: 10px; border-bottom: 1px solid #ddd; font-size: 15px;">
-                <span>${monthNames[i]}</span>
-                <strong style="color: var(--secondary);">R$ ${monthlyTotals[i].toFixed(2).replace('.', ',')}</strong>
-            </li>`;
-        }
-    }
-    html += '</ul>';
-
-    document.getElementById('yearly-report-content').innerHTML = html;
-    document.getElementById('yearly-total-money').innerText = `R$ ${yearlyTotal.toFixed(2).replace('.', ',')}`;
-}
-
-function closeYearlyReport() {
-    document.getElementById('yearly-report-modal').classList.add('hidden');
 }
 
 async function updateKidData() {
@@ -399,23 +456,105 @@ async function applyPenaltyCustom() {
 }
 
 // ==========================================
-// ABA: SUPER ADMIN
+// 📊 RELATÓRIO ANUAL INTELIGENTE 
 // ==========================================
-async function loadPendingParents() {
-    const { data } = await db.from('parents').select('*').eq('is_approved', false);
-    const list = document.getElementById('pending-parents-list');
-    list.innerHTML = '';
-    if (!data || data.length === 0) { list.innerHTML = '<li>Nenhum pendente.</li>'; return; }
-    data.forEach(p => {
-        list.innerHTML += `<li style="background:#fff; padding:10px; margin-bottom:5px; border-radius:10px; border:1px solid #ddd;">
-            ${p.email} <button onclick="approveParent('${p.id}')" style="background:var(--secondary); color:#fff; padding:5px; border-radius:5px; width:auto; float:right;">Aprovar</button>
-        </li>`;
-    });
+async function openYearlyReport() {
+    if (!currentKid) return;
+    reportCurrentYear = new Date().getFullYear();
+    document.getElementById('yearly-report-modal').classList.remove('hidden');
+    await loadYearData();
 }
-async function approveParent(id) {
-    await db.from('parents').update({ is_approved: true }).eq('id', id);
-    loadPendingParents();
-    showModal('Sucesso', 'Pai aprovado!', 'success');
+
+function closeYearlyReport() { document.getElementById('yearly-report-modal').classList.add('hidden'); }
+
+async function changeReportYear(direction) {
+    reportCurrentYear += direction;
+    await loadYearData();
+}
+
+function toggleMonthAccordion(monthIndex) {
+    const content = document.getElementById(`month-content-${monthIndex}`);
+    const icon = document.getElementById(`month-icon-${monthIndex}`);
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.innerText = "▼";
+    } else {
+        content.classList.add('hidden');
+        icon.innerText = "▶";
+    }
+}
+
+async function loadYearData() {
+    document.getElementById('report-year-display').innerText = reportCurrentYear;
+    document.getElementById('yearly-report-content').innerHTML = '<p style="text-align:center;">Buscando mágica...</p>';
+
+    const startOfYear = new Date(reportCurrentYear, 0, 1).toISOString();
+    const endOfYear = new Date(reportCurrentYear, 11, 31, 23, 59, 59).toISOString();
+
+    const { data: logs } = await db.from('daily_log')
+        .select('*')
+        .eq('kid_id', currentKid.id)
+        .gte('created_at', startOfYear)
+        .lte('created_at', endOfYear)
+        .order('created_at', { ascending: false });
+
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+    let monthlyData = Array(12).fill(null).map(() => ({ total: 0, days: {} }));
+    let yearlyTotal = 0;
+
+    if (logs) {
+        logs.forEach(log => {
+            const logDate = new Date(log.created_at);
+            const m = logDate.getMonth();
+            const dStr = logDate.toLocaleDateString('pt-BR');
+
+            if (!monthlyData[m].days[dStr]) monthlyData[m].days[dStr] = [];
+            monthlyData[m].days[dStr].push(log);
+
+            if (!log.is_penalty) {
+                monthlyData[m].total += log.value;
+                yearlyTotal += log.value;
+            }
+        });
+    }
+
+    let html = '';
+    let hasAnyData = false;
+
+    for (let i = 11; i >= 0; i--) {
+        if (Object.keys(monthlyData[i].days).length > 0) {
+            hasAnyData = true;
+            html += `
+            <div style="background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 8px; overflow: hidden;">
+                <button onclick="toggleMonthAccordion(${i})" style="width: 100%; background: #eee; border: none; padding: 12px; text-align: left; display: flex; justify-content: space-between; align-items: center; border-radius: 0; box-shadow: none; margin: 0; font-size: 16px; color: #333;">
+                    <span><strong style="color: var(--secondary); margin-right: 10px;">R$ ${monthlyData[i].total.toFixed(2).replace('.', ',')}</strong> ${monthNames[i]}</span>
+                    <span id="month-icon-${i}" style="font-size: 12px; color: #888;">▶</span>
+                </button>
+                <div id="month-content-${i}" class="hidden" style="padding: 10px;">`;
+
+            for (const [dayString, dayLogs] of Object.entries(monthlyData[i].days)) {
+                html += `<div style="margin-bottom: 10px;">
+                            <strong style="font-size: 13px; color: #666; display: block; border-bottom: 1px solid #ccc; margin-bottom: 5px;">📅 ${dayString}</strong>`;
+
+                dayLogs.forEach(l => {
+                    const time = new Date(l.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    if (l.is_penalty) {
+                        html += `<div style="font-size: 13px; color: var(--danger); margin-bottom: 3px;">❌ ${time} - ${l.description} (-R$ ${l.value.toFixed(2).replace('.', ',')})</div>`;
+                    } else {
+                        html += `<div style="font-size: 13px; color: #444; margin-bottom: 3px;">✅ ${time} - ${l.description} (+R$ ${l.value.toFixed(2).replace('.', ',')})</div>`;
+                    }
+                });
+                html += `</div>`;
+            }
+            html += `</div></div>`;
+        }
+    }
+
+    if (!hasAnyData) html = '<p style="text-align:center; color:#888;">Nenhuma atividade neste ano.</p>';
+
+    document.getElementById('yearly-report-content').innerHTML = html;
+    document.getElementById('yearly-total-money').innerText = `R$ ${yearlyTotal.toFixed(2).replace('.', ',')}`;
 }
 
 // ==========================================
