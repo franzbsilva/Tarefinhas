@@ -7,6 +7,7 @@ let currentKid = null;
 let currentParentId = null;
 let reportCurrentYear = new Date().getFullYear();
 
+// TAREFAS OFICIAIS (O Método Padrão do App)
 const defaultTasks = [
     { description: "Higiene Matinal (Escovar dentes/Lavar rosto)", value: 0.20, is_obligatory: true },
     { description: "Trocar de roupa sozinho (Pijama para roupa do dia)", value: 0.20, is_obligatory: true },
@@ -135,7 +136,6 @@ function closeInstallBanner() { if (installBanner) installBanner.classList.add('
 document.addEventListener("DOMContentLoaded", () => {
     const termosAceitos = localStorage.getItem("termos_magicos_aceitos");
     const termsModal = document.getElementById('terms-modal');
-    // Proteção adicionada para não dar erro se o modal não existir no HTML
     if (!termosAceitos && termsModal) termsModal.classList.remove('hidden');
 });
 
@@ -459,10 +459,8 @@ async function deleteTask(id) {
 }
 
 // ==========================================
-// ABA: FILHOS E DADOS 
+// ABA: FILHOS E DADOS (PROTEÇÃO DE LOGIN)
 // ==========================================
-
-// FUNÇÃO RESTAURADA E SALVA!
 async function addKid() {
     const name = document.getElementById('add-kid-name').value.trim();
     const login = document.getElementById('add-kid-login').value.toLowerCase().trim();
@@ -482,7 +480,12 @@ async function addKid() {
     }]);
 
     if (error) {
-        showModal('Erro', error.message, 'error');
+        // Verifica se o erro do Supabase é devido a um login duplicado
+        if (error.code === '23505' || error.message.includes('duplicate') || error.message.includes('unique')) {
+            showModal('Atenção', `O login "${login}" já está em uso por outra criança no sistema. Escolha outro adicionando números ou o sobrenome (Ex: ${login}2026).`, 'error');
+        } else {
+            showModal('Erro', error.message, 'error');
+        }
     } else {
         document.getElementById('add-kid-name').value = '';
         document.getElementById('add-kid-login').value = '';
@@ -535,14 +538,27 @@ async function loadKidDataForAdmin() {
     }
 }
 
+// ATUALIZAÇÃO PROTEGIDA CONTRA LOGIN DUPLICADO
 async function updateKidData() {
     if (!currentKid) return;
-    const n = document.getElementById('edit-kid-name').value;
-    const l = document.getElementById('edit-kid-login').value.toLowerCase();
+    const n = document.getElementById('edit-kid-name').value.trim();
+    const l = document.getElementById('edit-kid-login').value.toLowerCase().trim();
     const p = document.getElementById('edit-kid-pass').value;
-    await db.from('kids').update({ name: n, login: l, pass: p }).eq('id', currentKid.id);
-    showModal('Pronto!', 'Dados atualizados.', 'success');
-    populateKidSelector();
+
+    if (!n || !l || !p) { showModal('Atenção', 'Preencha todos os dados da criança.', 'error'); return; }
+
+    const { error } = await db.from('kids').update({ name: n, login: l, pass: p }).eq('id', currentKid.id);
+
+    if (error) {
+        if (error.code === '23505' || error.message.includes('duplicate') || error.message.includes('unique')) {
+            showModal('Atenção', `O login "${l}" já está em uso por outra criança. Tente outro nome!`, 'error');
+        } else {
+            showModal('Erro', error.message, 'error');
+        }
+    } else {
+        showModal('Pronto!', 'Dados atualizados.', 'success');
+        populateKidSelector();
+    }
 }
 
 async function applyPenaltyBtn(desc, val) {
