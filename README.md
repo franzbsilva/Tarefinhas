@@ -1,4 +1,4 @@
-# 🌟 Cofre Mágico Kids
+# 🌟 Tarefinhas - Cofre Mágico Kids
 
 Um aplicativo web progressivo (PWA) desenvolvido pela **Franz TI Services** para revolucionar a forma como os pais ensinam educação financeira e responsabilidade aos filhos. Através de um sistema gamificado, as crianças aprendem o valor do esforço, enquanto os pais têm total controlo sobre tarefas e recompensas.
 
